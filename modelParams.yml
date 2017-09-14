@@ -40,7 +40,7 @@ modelParams:
       value:
         fieldname: consumption
         name: consumption
-        resolution: 1
+        resolution: 0.05
         seed: 2048
         type: RandomDistributedScalarEncoder
     sensorAutoReset: null
@@ -50,7 +50,7 @@ modelParams:
     boostStrength: 0.0
     columnCount: 2048
     globalInhibition: 1
-    inputWidth: 512
+    inputWidth: 1
     numActiveColumnsPerInhArea: 40
     potentialPct: 0.8
     seed: 1956

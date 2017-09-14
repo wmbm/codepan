@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[16]:
 
 
 import numpy as np
@@ -13,6 +13,7 @@ import pandas as pd
 def get_data(n="n"):
     N=10000
     A_base = 20
+    dur_base = 24
     T_week = (2*np.pi)/ 168  # weekly period in hours
     T_day = (2*np.pi) / 24   # daily period in hours
     time_step = 1
@@ -25,44 +26,44 @@ def get_data(n="n"):
     # Sudden amplitude shift *for both weekly and daily sines
     A = 5                           # amplitude shift
     A_loc = 8200                     # location
-    A_dur = 200                      # anomaly duration
+    A_dur = dur_base                      # anomaly duration
     A_range = np.arange(A_loc,A_loc+A_dur) 
     data[A_range] = (A/2)*np.sin(T_day*A_range) +(A/2)*np.sin(T_week*A_range) 
 
     # Gradual amplitude shift *for both weekly and daily sines
     As = 5                           # amplitude shift
     As_loc = 8500                     # location
-    As_dur = 200                      # anomaly duration
+    As_dur = dur_base                      # anomaly duration
     As_range = np.arange(As_loc,As_loc+As_dur,1)
     As_shift = np.linspace(A_base,As,As_dur)
     data[As_range] = (As_shift/2)*np.sin(T_day*As_range) +(As_shift/2)*np.sin(T_week*As_range) 
 
     # Sudden Frequency shift *for both weekly and daily sines
     f = 2                          # frequency shift
-    f_loc = 8800                   # location
-    f_dur = 100                    # anomaly duration
+    f_loc = 8750                   # location
+    f_dur = dur_base                    # anomaly duration
     f_range = np.arange(f_loc,f_loc+f_dur)
     data[f_range] = (A_base/2)*np.sin((T_day*f_range)/f) +(A_base/2)*np.sin((T_week*f_range)/f) 
 
     # Gradual frequency shift
     fs = 1.4                           # frequency shift
     fs_loc = 9000                     # location
-    fs_dur = 200                      # anomaly duration
+    fs_dur = dur_base                      # anomaly duration
     fs_range =  np.arange(fs_loc,fs_loc+fs_dur)
     fs_shift =  np.arange(1,fs,((fs-1)/fs_dur))
     data[fs_range] = (A_base/2)*np.sin((T_day*fs_range)/fs_shift) +(A_base/2)*np.sin((T_week*fs_range)/fs_shift)
         
     # Sudden Phase Shift
     p = 0.5*np.pi
-    p_loc = 9300
-    p_dur = 100
+    p_loc = 9250
+    p_dur = dur_base
     p_range = np.arange(p_loc,p_loc+p_dur)
     data[p_range] =  (A_base/2)*np.sin(T_day*p_range + p) +(A_base/2)*np.sin(T_week*p_range + p) 
 
     # Gradual Phase Shift
     ps = 0.5*np.pi
     ps_loc = 9500
-    ps_dur = 200
+    ps_dur = dur_base
     ps_range = np.arange(ps_loc,ps_loc+ps_dur)
     ps_shift =  np.linspace(1,ps,ps_dur)
     data[ps_range] = (A_base/2)*np.sin(T_day*ps_range + ps_shift) +(A_base/2)*np.sin(T_week*ps_range + ps_shift) 
@@ -70,12 +71,12 @@ def get_data(n="n"):
 
     # Add noise
     if n == "Y":
-        N_s = 15                    # noise magnitude
+        N_s = 10                   # noise magnitude
         data = data + np.random.normal(0,N_s,N)
 
     # Missing data
     M_loc = 9800                        # location
-    M_dur = 100                        # anomaly duration
+    M_dur = dur_base                    # anomaly duration
     data[M_loc:M_loc+M_dur] = 0
 
     # Convert data indicies into hours '%m/%d/%y %H:%M'
@@ -121,6 +122,6 @@ def plot_data(data, anomaly_loc, anomaly_dur, Start=8000):
     plt.show()
     
 
-data, anomaly_loc, anomaly_dur, dates = get_data(n="Y")
-plot_data(data[8000:], anomaly_loc, anomaly_dur)
+#data, anomaly_loc, anomaly_dur, dates = get_data(n="Y")
+#plot_data(data[8000:], anomaly_loc, anomaly_dur)
 

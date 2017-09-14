@@ -11773,7 +11773,7 @@ div#notebook {
 
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="prompt input_prompt">In&nbsp;[1]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#from sklearn.metrics import mean_squared_error</span>
@@ -11786,7 +11786,7 @@ div#notebook {
 <span class="sd">    Various metric for comparing output predictions and input values for </span>
 <span class="sd">    learning algorithms</span>
 <span class="sd">    </span>
-<span class="sd">    RSME, MAPE, MPE, MAD, NLL, error *squared error</span>
+<span class="sd">    RSME, MAPE, MPE, MAD, NLL, MSE</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
     <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span>
@@ -11799,8 +11799,8 @@ div#notebook {
     <span class="k">elif</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;MAPE&quot;</span><span class="p">:</span>
         <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
-            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(((</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">test</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">pred</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">/</span><span class="n">pred</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span>
-    
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(((</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">test</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">pred</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">/</span><span class="n">test</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="mi">100</span><span class="p">)</span>
+        
     <span class="k">elif</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;MPE&quot;</span><span class="p">:</span> 
         <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
@@ -11815,11 +11815,14 @@ div#notebook {
         <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
             <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">logpdf</span><span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">loc</span><span class="o">=</span><span class="n">pred</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span><span class="o">/</span><span class="mi">100</span><span class="p">)</span>
-
-    <span class="k">elif</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;error&quot;</span><span class="p">:</span>
+    
+    <span class="k">elif</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;MSE&quot;</span><span class="p">:</span>
         <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
-            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">pred</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">x_test</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(((</span><span class="n">test</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">pred</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+    
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Key error&quot;</span><span class="p">)</span>
     
     <span class="k">return</span> <span class="n">out</span>
 </pre></div>

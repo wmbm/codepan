@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 
 #from sklearn.metrics import mean_squared_error
@@ -14,7 +14,7 @@ def main(test, pred, metric = "RMSE"):
     Various metric for comparing output predictions and input values for 
     learning algorithms
     
-    RSME, MAPE, MPE, MAD, NLL, error *squared error
+    RSME, MAPE, MPE, MAD, NLL, MSE
     """
     
     N = len(pred)
@@ -27,8 +27,8 @@ def main(test, pred, metric = "RMSE"):
     elif metric == "MAPE":
         out = []
         for i in np.arange(N):
-            out.append(((np.abs((test[i] - pred[i])/pred[i]))/2))
-    
+            out.append(((np.abs((test[i] - pred[i])/test[i]))/2)*100)
+        
     elif metric == "MPE": 
         out = []
         for i in np.arange(N):
@@ -43,11 +43,14 @@ def main(test, pred, metric = "RMSE"):
         out = []
         for i in np.arange(N):
             out.append(-np.sum(stats.norm.logpdf(test[i], loc=pred[i]))/100)
-
-    elif metric == "error":
+    
+    elif metric == "MSE":
         out = []
         for i in np.arange(N):
-            out.append((pred[i] - x_test[i,0])**2)
+            out.append(((test[i] - pred[i])**2)/2)
+    
+    else:
+        print("Key error")
     
     return out
 

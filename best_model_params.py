@@ -31,7 +31,7 @@ MODEL_PARAMS = \
                 }, 
                 "value": {
                     "name": "consumption", 
-                    "resolution": 1, 
+                    "resolution": 0.05, 
                     "seed": 2048, 
                     "fieldname": "consumption", 
                     "type": "RandomDistributedScalarEncoder"
@@ -54,7 +54,7 @@ MODEL_PARAMS = \
             "columnCount": 2048, 
             "synPermInactiveDec": 0.0005, 
             "spatialImp": "cpp", 
-            "inputWidth": 512, 
+            "inputWidth": 1, 
             "spVerbosity": 0, 
             "synPermConnected": 0.2, 
             "synPermActiveInc": 0.003, 

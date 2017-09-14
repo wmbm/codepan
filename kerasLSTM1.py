@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[2]:
+# In[1]:
 
 
 import numpy as np
@@ -80,7 +80,7 @@ model.fit(
 predicted = predict_point_by_point(model, X_test)
 
 
-# In[9]:
+# In[38]:
 
 
 from evaluatePredictions import main
@@ -98,13 +98,13 @@ plt.show()
 
 
 # Compute comparison metric for predicted vs input (anomalies)
-out = main(x_test[:,0], predicted, metric="MPE")
+out = main(x_test[:,0], predicted, metric="MAPE")
 
 # Threshold metric before plotting
-thresh = 10
+thresh = 2
 to_plot = out
 to_plot=np.asarray(to_plot)
-to_plot[to_plot<thresh]=1
+to_plot[to_plot<thresh]=0
 
-sim.plot_data(np.log(to_plot), anomaly_loc, anomaly_dur)
+sim.plot_data(np.log(out), anomaly_loc, anomaly_dur)
 
