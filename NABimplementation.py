@@ -30,3 +30,15 @@ Sperfect = 1
 Snull = 0 
 Snorm = 100*((S-Snull)/(Sperfect-Snull))
 
+
+# In[ ]:
+
+
+
+
+
+# In[1]:
+
+
+import pgcli
+

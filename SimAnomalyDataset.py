@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[16]:
+# In[3]:
 
 
 import numpy as np
@@ -10,7 +10,7 @@ from datetime import datetime
 from datetime import timedelta 
 import pandas as pd
 
-def get_data(n="n"):
+def get_data(n=0):
     N=10000
     A_base = 20
     dur_base = 24
@@ -70,9 +70,8 @@ def get_data(n="n"):
 
 
     # Add noise
-    if n == "Y":
-        N_s = 10                   # noise magnitude
-        data = data + np.random.normal(0,N_s,N)
+    N_s = n                   # noise magnitude percentage
+    data = data + np.random.normal(0,N_s*A_base,N)
 
     # Missing data
     M_loc = 9800                        # location
@@ -122,6 +121,6 @@ def plot_data(data, anomaly_loc, anomaly_dur, Start=8000):
     plt.show()
     
 
-#data, anomaly_loc, anomaly_dur, dates = get_data(n="Y")
+#data, anomaly_loc, anomaly_dur, dates = get_data(n=0.5)
 #plot_data(data[8000:], anomaly_loc, anomaly_dur)
 

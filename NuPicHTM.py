@@ -82,27 +82,35 @@ with open ("sim_data.csv") as fileIn:
         anomaly_logLikelihood.append(anomaly_logLikelihood_r)
 
 
-# In[7]:
+# In[2]:
 
 
 import numpy as np
 import SimAnomalyDataset as pie
-from evaluatePredictions import main
+import evaluatePredictions as evalPred
 
 # get anomaly locations from simulation
-data, anomaly_loc, anomaly_dur, dates = pie.get_data(n="n")
+data, anomaly_loc, anomaly_dur, dates = pie.get_data(n=0)
 
 # slight data transformation
 a = np.asarray(input_data)
 a = a[:,2].astype(np.float)
 
-OUT = main(test=a[8000:], pred=prediction[8000:], metric = "MAPE")
+OUT = evalPred.main(test=a[8000:], pred=prediction[8000:], metric = "RMSE")
 
 #RMSE plot
+thresh = 0
 to_plot=np.asarray(OUT)
-to_plot[to_plot<100]=0
-pie.plot_data(np.log(to_plot), anomaly_loc, anomaly_dur)
+to_plot[to_plot<thresh]=0
+pie.plot_data((to_plot), anomaly_loc, anomaly_dur)
 
 #anomaly likelihoods
-pie.plot_data(anomaly_logLikelihood[8000:], anomaly_loc, anomaly_dur)
+pie.plot_data(anomaly_Likelihood[8000:], anomaly_loc, anomaly_dur)
+
+
+# In[5]:
+
+
+pred=a[8000:]-prediction[8000:]
+evalPred.GaussianPredError(pred,anomaly_loc, anomaly_dur,thresh=0.97)
 
