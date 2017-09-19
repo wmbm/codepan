@@ -171,11 +171,7 @@ pred = actual2[:,0]- forecasts2[:,0]
 anomaly_score = evalPred.GaussianPredError(pred, anomaly_loc, anomaly_dur,thresh=0.05)
 
 
-# In[10]:
-
-
-import numpy as np
-import SimAnomalyDataset as sim
+# In[4]:
 
 
 # Threshold anomalies to binary
@@ -183,60 +179,93 @@ thresh = 0.05
 anomaly_score[anomaly_score>thresh]=1
 anomaly_score[anomaly_score<thresh]=0
 
-# Get anomaly locations from simulation
-data, anomaly_loc, anomaly_dur, dates = sim.get_data(n=0)
 
-# Defined anomaly window size
-N_anomalies = np.count_nonzero(anomaly_score)
-windowSize = round((len(data)*0.1)/N_anomalies) # 10% of data is window size
-windowSize2 = round(windowSize/2)
+# Convert anomaly locations to binary array
+labels = np.zeros_like(anomaly_score)
+for i in anomaly_loc:
+    labels[i-8000] = 1
 
-# Store "unseen" anomalies
-anomaly_unseen = anomaly_score
-# Initialize empty score array
-S=[]
-# loop through anomaly locations
-for loc in anomaly_loc:
-    # define window around anomaly
-    window = anomaly_score[loc-(windowSize2):loc+(windowSize2)]
-    # loop through anomaly score relative positions
-    for y in window: 
-        # shift right edge of window to be "zero" position 
-        y = y - len(window)
-        # apply sigmoid function to relative position
-        S.append(sigmoid(window[y]))
-    # false negatives and ture positives within window
-#     FN_window = window[window==0].sum()
-#     TP_window = window[window==1].sum()
+# Write data to CSV file
+datacsv = DataFrame()
+datacsv["timestamp"] = dates[8000:]
+datacsv["value"] = data[8000:]
+datacsv["anomaly_score"] = anomaly_score
+datacsv["label"] = labels
+
+
+# In[10]:
+
+
+datacsv.to_csv(path_or_buf="/home/codepan1/RestRunnerCode/LSTManomalyscores.csv")
     
-    # FP are values outside of these window
-    anomaly_unseen[loc-(windowSize2):loc+(windowSize2)] = 0
-    
-# Sum raw scores
-A_FP = -.1
-S = np.sum(S) + np.sum(anomaly_unseen)*A_FP
-
-
-# Normalization
-Sperfect = 100
-Snull = 0 
-Snorm = 100*((S-Snull)/(Sperfect-Snull))
-
-Snorm
-
-
-# In[5]:
-
-
-# Sigmoid score function
-def sigmoid(y):
-    return(2*(1/(1+np.exp(5*y)))-1)
-
-plt.plot(sigmoid(np.arange(-3,3,1)))
-plt.show()
 
 
 # In[6]:
+
+
+# import numpy as np
+# import SimAnomalyDataset as sim
+
+
+# # Threshold anomalies to binary
+# thresh = 0.05
+# anomaly_score[anomaly_score>thresh]=1
+# anomaly_score[anomaly_score<thresh]=0
+
+# # Get anomaly locations from simulation
+# data, anomaly_loc, anomaly_dur, dates = sim.get_data(n=0)
+
+# # Defined anomaly window size
+# N_anomalies = np.count_nonzero(anomaly_score)
+# windowSize = round((len(data)*0.1)/N_anomalies) # 10% of data is window size
+# windowSize2 = round(windowSize/2)
+
+# # Store "unseen" anomalies
+# anomaly_unseen = anomaly_score
+# # Initialize empty score array
+# S=[]
+# # loop through anomaly locations
+# for loc in anomaly_loc:
+#     # define window around anomaly
+#     window = anomaly_score[loc-(windowSize2):loc+(windowSize2)]
+#     # loop through anomaly score relative positions
+#     for y in window: 
+#         # shift right edge of window to be "zero" position 
+#         y = y - len(window)
+#         # apply sigmoid function to relative position
+#         S.append(sigmoid(window[y]))
+#     # false negatives and ture positives within window
+# #     FN_window = window[window==0].sum()
+# #     TP_window = window[window==1].sum()
+    
+#     # FP are values outside of these window
+#     anomaly_unseen[loc-(windowSize2):loc+(windowSize2)] = 0
+    
+# # Sum raw scores
+# A_FP = -.1
+# S = np.sum(S) + np.sum(anomaly_unseen)*A_FP
+
+
+# # Normalization
+# Sperfect = 150
+# Snull = 0 
+# Snorm = 100*((S-Snull)/(Sperfect-Snull))
+
+# Snorm
+
+
+# In[7]:
+
+
+# # Sigmoid score function
+# def sigmoid(y):
+#     return(2*(1/(1+np.exp(5*y)))-1)
+
+# plt.plot(sigmoid(np.arange(-3,3,1)))
+# plt.show()
+
+
+# In[8]:
 
 
 # # Get anomaly locations from simulation

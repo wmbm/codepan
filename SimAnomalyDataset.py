@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[3]:
+# In[40]:
 
 
 import numpy as np
@@ -11,6 +11,13 @@ from datetime import timedelta
 import pandas as pd
 
 def get_data(n=0):
+    
+    """
+    Generate simulated data set
+    
+    Anomaly locations should be at multiples of 24 to keep phase 
+    
+    """
     N=10000
     A_base = 20
     dur_base = 24
@@ -25,28 +32,28 @@ def get_data(n=0):
 
     # Sudden amplitude shift *for both weekly and daily sines
     A = 5                           # amplitude shift
-    A_loc = 8200                     # location
+    A_loc = 8208                     # location
     A_dur = dur_base                      # anomaly duration
     A_range = np.arange(A_loc,A_loc+A_dur) 
     data[A_range] = (A/2)*np.sin(T_day*A_range) +(A/2)*np.sin(T_week*A_range) 
 
     # Gradual amplitude shift *for both weekly and daily sines
-    As = 5                           # amplitude shift
-    As_loc = 8500                     # location
-    As_dur = dur_base                      # anomaly duration
+    As = 1.05                           # amplitude shift
+    As_loc = 8472                     # location
+    As_dur = dur_base*2                      # anomaly duration
     As_range = np.arange(As_loc,As_loc+As_dur,1)
-    As_shift = np.linspace(A_base,As,As_dur)
-    data[As_range] = (As_shift/2)*np.sin(T_day*As_range) +(As_shift/2)*np.sin(T_week*As_range) 
+    As_shift = np.linspace(A_base,A_base*As,As_dur)
+    data[As_range] = (As_shift/2)*(A/2)*np.sin(T_day*As_range) +(As_shift/2)*(A/2)*np.sin(T_week*As_range) 
 
     # Sudden Frequency shift *for both weekly and daily sines
-    f = 2                          # frequency shift
-    f_loc = 8750                   # location
+    f = 1.01                          # frequency shift
+    f_loc = 8760                   # location
     f_dur = dur_base                    # anomaly duration
     f_range = np.arange(f_loc,f_loc+f_dur)
-    data[f_range] = (A_base/2)*np.sin((T_day*f_range)/f) +(A_base/2)*np.sin((T_week*f_range)/f) 
+    data[f_range] = (A_base/2)*np.sin(T_day*(f_range/f)) +(A_base/2)*np.sin(T_day*(f_range/f)) 
 
     # Gradual frequency shift
-    fs = 1.4                           # frequency shift
+    fs = 1.01                          # frequency shift
     fs_loc = 9000                     # location
     fs_dur = dur_base                      # anomaly duration
     fs_range =  np.arange(fs_loc,fs_loc+fs_dur)
@@ -55,14 +62,14 @@ def get_data(n=0):
         
     # Sudden Phase Shift
     p = 0.5*np.pi
-    p_loc = 9250
+    p_loc = 9240
     p_dur = dur_base
     p_range = np.arange(p_loc,p_loc+p_dur)
     data[p_range] =  (A_base/2)*np.sin(T_day*p_range + p) +(A_base/2)*np.sin(T_week*p_range + p) 
 
     # Gradual Phase Shift
     ps = 0.5*np.pi
-    ps_loc = 9500
+    ps_loc = 9480
     ps_dur = dur_base
     ps_range = np.arange(ps_loc,ps_loc+ps_dur)
     ps_shift =  np.linspace(1,ps,ps_dur)
@@ -103,7 +110,7 @@ def plot_data(data, anomaly_loc, anomaly_dur, Start=8000):
     for i in range(np.size(anomaly_loc)):
         anomaly_range.append(np.arange(anomaly_loc[i],anomaly_loc[i]+anomaly_dur[i]))
 
-    
+    plt.figure(1)
     plt.plot(data, label = 'Data',c='k', zorder=0)
     plt.scatter(range(100),np.zeros(100) ,s=5, label = 'Normal' ,zorder=10)
 
@@ -120,7 +127,22 @@ def plot_data(data, anomaly_loc, anomaly_dur, Start=8000):
     plt.ylabel("Amplitude axis")
     plt.show()
     
+def plot_anomalies(data, anomaly_loc, anomaly_dur, Start=8000, buffer = 100):
+    
+    
+    names = ['Sudden Amplitude','Gradual Amplitude','Sudden Frequency','Gradual Frequency',
+            'Sudden Phase', 'Gradual Phase']
+    plt.figure(2)
+    for i in range(6):
+        plt.subplot(2,3,i+1)
+        plt.plot(data[anomaly_loc[i]-buffer:anomaly_loc[i]+anomaly_dur[i]+buffer])
+        plt.title(names[i])
+        plt.axis('off')
+        
+    plt.show()
+    
 
-#data, anomaly_loc, anomaly_dur, dates = get_data(n=0.5)
-#plot_data(data[8000:], anomaly_loc, anomaly_dur)
+data, anomaly_loc, anomaly_dur, dates = get_data(n=0)
+plot_data(data[8000:], anomaly_loc, anomaly_dur)
+plot_anomalies(data, anomaly_loc, anomaly_dur)
 
