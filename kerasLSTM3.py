@@ -16,6 +16,9 @@ from pandas import datetime
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pylab as plt
+import SimAnomalyDataset as sim
+
+
 
 # transform series into train and test sets for supervised learning
 def prepare_data(series, n_test, n_lag, n_seq):
@@ -105,7 +108,7 @@ def inverse_transform(series, forecasts, scaler, n_test):
         inv_scale = inv_scale[0, :]
         # invert differencing
         index = len(series) - n_test + i - 1
-        last_ob = series['consumption'][index]
+        last_ob = series['mag'][index]
         inv_diff = inverse_difference(last_ob, inv_scale)
         # store
         inverted.append(inv_diff)
@@ -119,9 +122,15 @@ def evaluate_forecasts(test, forecasts, n_lag, n_seq):
         rmse = np.sqrt(mean_squared_error(actual, predicted))
         print('t+%d RMSE: %f' % ((i+1), rmse))
 
-# import dataset
-series = read_csv('sim_data.csv', header=0, index_col=0, squeeze=True)
-    
+# Create dataset
+#data, anomaly_loc, anomaly_dur, dates = sim.get_data(n=0.1,datalabels=["timestamp","consumption"])
+        
+# Import dataset
+#series = read_csv('sim_data.csv', header=0, index_col=0, squeeze=True)
+series = read_csv('all_month.csv', header=0, index_col=0, squeeze=True)
+series = series.filter(['time','mag'], axis=1)
+series = series[np.isfinite(series['mag'])]
+
 # configure
 n_lag = 1
 n_seq = 1
@@ -130,7 +139,7 @@ n_epochs = 1500
 n_batch = 1
 n_neurons = 1
 # prepare data
-scaler, train, test =  prepare_data(series['consumption'], n_test, n_lag, n_seq)
+scaler, train, test =  prepare_data(series['mag'], n_test, n_lag, n_seq)
 # make forecasts
 forecasts = make_forecasts(train, test, n_lag, n_seq)
 # inverse transform forecasts and test
@@ -152,55 +161,71 @@ actual2=np.reshape(actual,(2000,1))
 forecasts2=np.reshape(forecasts,(2000,1))
 
 # Compute comparison metric for predicted vs input (anomalies) [PICK CHANNEL]
-out = evalPred.main(actual2[:,0], forecasts2[:,0], metric="MSE")
+metric = "RMSE"
+out = evalPred.main(actual2[:,0], forecasts2[:,0], metric=metric)
 
-# Threshold metric before plotting
-# thresh = 30
-# to_plot = out
-# to_plot=np.asarray(to_plot)
-# to_plot[to_plot<thresh]=0
+#Threshold metric before plotting
+thresh_min = 0
+thresh_max = 10000
+to_plot = out
+to_plot=np.asarray(to_plot)
+to_plot[to_plot<thresh_min]=0
+to_plot[to_plot>thresh_max]=thresh_max
+to_plot = to_plot/np.max(to_plot)
 
-sim.plot_data(out, anomaly_loc, anomaly_dur)
+sim.plot_data(to_plot, anomaly_loc, anomaly_dur,title=metric)
 
 
-# In[3]:
+# In[23]:
 
 
 # Fit prediction error with Gaussian to extract anomaly score
 pred = actual2[:,0]- forecasts2[:,0]
 anomaly_score = evalPred.GaussianPredError(pred, anomaly_loc, anomaly_dur,thresh=0.05)
 
-
-# In[4]:
-
-
 # Threshold anomalies to binary
-thresh = 0.05
+thresh = 0.99
 anomaly_score[anomaly_score>thresh]=1
 anomaly_score[anomaly_score<thresh]=0
 
+plt.plot(anomaly_score)
+plt.show()
+
+
+# In[24]:
+
 
 # Convert anomaly locations to binary array
-labels = np.zeros_like(anomaly_score)
+labels = np.zeros_like(dates)
 for i in anomaly_loc:
-    labels[i-8000] = 1
+    labels[i] = 1
+    
+# Pad anomaly scores to zero during training
+full_anomaly_scores = np.zeros_like(dates)
+full_anomaly_scores[8000:] = anomaly_score
 
 # Write data to CSV file
 datacsv = DataFrame()
-datacsv["timestamp"] = dates[8000:]
-datacsv["value"] = data[8000:]
-datacsv["anomaly_score"] = anomaly_score
+datacsv["timestamp"] = dates
+datacsv["value"] = np.round(data,3)
+datacsv["anomaly_score"] = full_anomaly_scores
 datacsv["label"] = labels
 
 
-# In[10]:
+# In[25]:
 
 
-datacsv.to_csv(path_or_buf="/home/codepan1/RestRunnerCode/LSTManomalyscores.csv")
-    
+datacsv.to_csv(path_or_buf="/home/codepan1/RestRunnerCode/alpha_Twitter_volume_AAPL.csv")
 
 
 # In[6]:
+
+
+plt.plot(data)
+plt.show()
+
+
+# In[7]:
 
 
 # import numpy as np
@@ -254,7 +279,7 @@ datacsv.to_csv(path_or_buf="/home/codepan1/RestRunnerCode/LSTManomalyscores.csv"
 # Snorm
 
 
-# In[7]:
+# In[8]:
 
 
 # # Sigmoid score function
@@ -265,7 +290,7 @@ datacsv.to_csv(path_or_buf="/home/codepan1/RestRunnerCode/LSTManomalyscores.csv"
 # plt.show()
 
 
-# In[8]:
+# In[9]:
 
 
 # # Get anomaly locations from simulation

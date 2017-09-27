@@ -1,17 +1,15 @@
 
 # coding: utf-8
 
-# In[11]:
+# In[7]:
 
 
-import SimAnomalyDataset as sim
-
-sim.get_data)
-
-
-# In[9]:
+from pandas import read_csv
+import matplotlib.pylab as plt
+PATH  = "/home/codepan1/RestRunnerTestData/NAB/results/alpha/realTweets/"
+name = read_csv(PATH + "alpha_Twitter_volume_AAPL.csv" )
 
 
-As_shift = np.arange(A_base,As,-1/As_dur)
-As_shift.shape
+plt.plot(name["value"])
+plt.show()
 

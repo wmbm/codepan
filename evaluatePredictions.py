@@ -94,7 +94,7 @@ def GaussianPredError(error_vector, anomaly_loc, anomaly_dur, thresh = 0.99999):
 
     # Plot output
     anomaly_score[anomaly_score<thresh]=0
-    sim.plot_data((anomaly_score), anomaly_loc, anomaly_dur)
+    sim.plot_data((anomaly_score), anomaly_loc, anomaly_dur,title="Extracted anomaly score")
     
     return anomaly_score
 

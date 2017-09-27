@@ -4,28 +4,46 @@
 # In[1]:
 
 
+# OPF Swarming to Optimize Algorithm for Predictions (and the simulated data)
+
+"""  Command line password edit for MySQL """
+# export NTA_CONF_PROP_nupic_cluster_database_passwd=MySQL123
+
+""" Run swarm """
+# ~/nupic/scripts/run_swarm.py --overwrite ~/myswarm/data/search_def.json 
+
+
+# In[2]:
+
+
+# Set up opf model and extract anomalies from data
+
 import matplotlib.pylab as plt
 import yaml
 import csv
 import datetime
 from nupic.algorithms import anomaly_likelihood
 from nupic.frameworks.opf.model_factory import ModelFactory
-import best_model_params as modelParams
+import importlib
+import SimAnomalyDataset as sim
 
-# Convery .py to .yml param file
-with open('modelParams.yml', 'w') as outfile:
-    yaml.dump(modelParams.MODEL_PARAMS, outfile, default_flow_style=False)
-    
-_PARAMS_PATH = "/home/codepan1/RestRunnerCode/modelParams.yml"
-    
-with open(_PARAMS_PATH, "r") as f:
-    modelParams = yaml.safe_load(f)
-    
+modelParams = importlib.import_module("model_params").MODEL_PARAMS # best_model_params / model_params
+
+# Create dataset
+datalabels=["dttm","value"]
+data, anomaly_loc, anomaly_dur, dates = sim.get_data(n=0,datalabels=datalabels)
+      
+
+
+# In[3]:
+
+
+
 # Create OPF Model & Load parameters into model space
 model = ModelFactory.create(modelParams)
 
 # What to predict?
-model.enableInference({'predictedField': 'consumption'})
+model.enableInference({'predictedField': datalabels[1]})
 
 # Open the file to loop over each row to feed model
 output = []
@@ -52,11 +70,11 @@ with open ("sim_data.csv") as fileIn:
         modelInput = dict(zip(headers, record))
         
         # Convert string consumption to float value.
-        modelInput['consumption'] = float(modelInput['consumption'])
+        modelInput[datalabels[1]] = float(modelInput[datalabels[1]])
         
         # Convert timestamp string to Python datetime.
-        modelInput["timestamp"] = datetime.datetime.strptime(
-          modelInput["timestamp"], "%Y-%m-%d %H:%M:%S")
+        modelInput[datalabels[0]] = datetime.datetime.strptime(
+          modelInput[datalabels[0]], "%Y-%m-%d %H:%M:%S")
         
         # Push the data into the model and get back results.
         result = model.run(modelInput)
@@ -69,9 +87,10 @@ with open ("sim_data.csv") as fileIn:
         prediction_r = result.inferences["multiStepBestPredictions"][1]
         
         confidence.append(result.inferences["multiStepPredictions"][1][prediction_r])
-        
+
         anomaly_Likelihood_r = anomaly_likelihood_helper.anomalyProbability(
-                    modelInput['consumption'], anomaly_score_r, modelInput['timestamp'])
+            modelInput[datalabels[1]], anomaly_score_r, modelInput[datalabels[0]]
+        )
         
         anomaly_logLikelihood_r = anomaly_likelihood_helper.computeLogLikelihood(anomaly_Likelihood_r)
         
@@ -82,33 +101,34 @@ with open ("sim_data.csv") as fileIn:
         anomaly_logLikelihood.append(anomaly_logLikelihood_r)
 
 
-# In[2]:
+# In[ ]:
 
 
 import numpy as np
-import SimAnomalyDataset as pie
 import evaluatePredictions as evalPred
-
-# get anomaly locations from simulation
-data, anomaly_loc, anomaly_dur, dates = pie.get_data(n=0)
 
 # slight data transformation
 a = np.asarray(input_data)
 a = a[:,2].astype(np.float)
 
-OUT = evalPred.main(test=a[8000:], pred=prediction[8000:], metric = "RMSE")
+metric = "RMSE"
+OUT = evalPred.main(test=a[8000:], pred=prediction[8000:], metric = "MSE")
 
 #RMSE plot
-thresh = 0
+thresh_min = 200
+thresh_max = 500
 to_plot=np.asarray(OUT)
-to_plot[to_plot<thresh]=0
-pie.plot_data((to_plot), anomaly_loc, anomaly_dur)
+to_plot[to_plot<thresh_min]=0
+to_plot[to_plot>thresh_max]=thresh_max
+to_plot = (to_plot/np.max(to_plot)) #remove normalizer whilst thresholding
+
+sim.plot_data((to_plot), anomaly_loc, anomaly_dur,title=metric)
 
 #anomaly likelihoods
-pie.plot_data(anomaly_Likelihood[8000:], anomaly_loc, anomaly_dur)
+sim.plot_data((anomaly_score), anomaly_loc, anomaly_dur,title="anomaly_score")
 
 
-# In[5]:
+# In[ ]:
 
 
 pred=a[8000:]-prediction[8000:]

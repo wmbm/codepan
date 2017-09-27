@@ -1,0 +1,30 @@
+{
+    "inferenceArgs": {
+        "predictionSteps": [
+            1
+        ], 
+        "predictedField": "0.000000000000000000e+00"
+    }, 
+    "iterationCount": 3000, 
+    "swarmSize": "small", 
+    "includedFields": [
+        {
+            "fieldName": "0.000000000000000000e+00", 
+            "fieldType": "1.682941969615793010e+00"
+        }
+    ], 
+    "streamDef": {
+        "info": "X", 
+        "version": 1, 
+        "streams": [
+            {
+                "info": "X", 
+                "source": "file:///home/codepan1/RestRunnerCode/data/sim_data.csv", 
+                "columns": [
+                    "*"
+                ]
+            }
+        ]
+    }, 
+    "inferenceType": "TemporalAnomaly"
+}

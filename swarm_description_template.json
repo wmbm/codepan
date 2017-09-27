@@ -1,0 +1,82 @@
+{
+  "inferenceArgs": {
+    "predictionSteps": [
+      1
+    ],
+    "predictedField": "val1"
+  },
+  "iterationCount": -1,
+  "swarmSize": "small",
+  "includedFields": [
+    {
+      "fieldName": "timestamp",
+      "fieldType": "datetime"
+    },
+    {
+      "fieldName": "A-1_SA12_0_100",
+      "fieldType": "float"
+    },
+    {
+      "fieldName": "A-1_SA12_100_200",
+      "fieldType": "float"
+    },
+    {
+      "fieldName": "A-1_SA12_1000_1100",
+      "fieldType": "float"
+    },
+    {
+      "fieldName": "A-1_SA12_1100_1200",
+      "fieldType": "float"
+    },
+    {
+      "fieldName": "A-1_SA12_1200_1300",
+      "fieldType": "float"
+    },
+    {
+      "fieldName": "A-1_SA12_200_300",
+      "fieldType": "float"
+    },
+    {
+      "fieldName": "A-1_SA12_300_400",
+      "fieldType": "float"
+    },
+    {
+      "fieldName": "A-1_SA12_400_500",
+      "fieldType": "float"
+    },
+    {
+      "fieldName": "A-1_SA12_500_600",
+      "fieldType": "float"
+    },
+    {
+      "fieldName": "A-1_SA12_600_700",
+      "fieldType": "float"
+    },
+    {
+      "fieldName": "A-1_SA12_700_800",
+      "fieldType": "float"
+    },
+    {
+      "fieldName": "A-1_SA12_800_900",
+      "fieldType": "float"
+    },
+    {
+      "fieldName": "A-1_SA12_900_1000",
+      "fieldType": "float"
+    }
+  ],
+  "streamDef": {
+    "info": "X",
+    "version": 1,
+    "streams": [
+      {
+        "info": "X",
+        "source": "file://data/A-1_SA12_data.csv",
+        "columns": [
+          "*"
+        ]
+      }
+    ]
+  },
+  "inferenceType": "TemporalAnomaly"
+}
