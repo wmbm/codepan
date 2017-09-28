@@ -11773,79 +11773,107 @@ div#notebook {
 
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[47]:</div>
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">pandas</span> <span class="k">import</span> <span class="n">read_csv</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="n">series</span> <span class="o">=</span> <span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;/home/codepan1/RestRunnerCode/alpha_Twitter_volume_AAPL.csv&quot;</span><span class="p">)</span>
 
-<span class="c1"># Defined anomaly window size</span>
-<span class="n">labels</span> <span class="o">=</span> <span class="n">series</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
-<span class="n">value</span> <span class="o">=</span> <span class="n">series</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
-<span class="n">anomaly_score</span> <span class="o">=</span> <span class="n">series</span><span class="p">[</span><span class="s2">&quot;anomaly_score&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
-<span class="n">N_anomalies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
-<span class="n">windowSize</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="mf">0.1</span><span class="p">)</span><span class="o">/</span><span class="n">N_anomalies</span> <span class="c1"># 10% of data is window size</span>
-<span class="n">windowSize2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">windowSize</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span>
-
-<span class="c1"># Sigmoid score function</span>
-<span class="k">def</span> <span class="nf">sigmoid</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">Atp</span><span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">Afp</span><span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">sigmoid</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">Atp</span><span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">Afp</span><span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span> <span class="c1"># </span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sigmoid score function gives a weight to detection based on their location in the anomaly window</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    y : relative position of detection within anomaly window</span>
+<span class="sd">    Atp : weight of true positive</span>
+<span class="sd">    Afp : weight of false positive</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span><span class="p">((</span><span class="n">Atp</span><span class="o">-</span><span class="n">Afp</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">5</span><span class="o">*</span><span class="n">y</span><span class="p">)))</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
-<span class="c1"># find indicies of anomaly labels</span>
-<span class="n">Afn</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
-<span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N_anomalies</span><span class="p">)</span>
-<span class="n">count</span> <span class="o">=</span> <span class="mi">0</span> 
-<span class="n">fd</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># false detections</span>
-<span class="n">raw_score</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">anomaly_score</span><span class="p">,</span> <span class="n">Afn</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate single metric based on the ability of a detector to extract anomalies from the input data</span>
+<span class="sd">    </span>
+<span class="sd">    Variables</span>
+<span class="sd">    ---------</span>
+<span class="sd">    labels : hand labelled or simulated anomaly input locations</span>
+<span class="sd">    anomaly_score : output of detectors binary scale (1 being 100% likely anomaly)</span>
+<span class="sd">    Afn : weight of false negative</span>
+<span class="sd">    </span>
+<span class="sd">    Output</span>
+<span class="sd">    ---------</span>
+<span class="sd">    Snorm : normalized representation of the accuracy of a detector</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># calculate number of anomalies and window sizes</span>
+    <span class="n">N_anomalies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+    <span class="n">windowSize</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">anomaly_score</span><span class="p">)</span><span class="o">*</span><span class="mf">0.1</span><span class="p">)</span><span class="o">/</span><span class="n">N_anomalies</span> <span class="c1"># 10% of data is window size</span>
+    <span class="n">windowSize2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">windowSize</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span>
 
-<span class="c1"># plot output</span>
-<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">labels</span><span class="p">[</span><span class="mi">8000</span><span class="p">:],</span><span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;Labelled anomalies&quot;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">anomaly_score</span><span class="p">[</span><span class="mi">8000</span><span class="p">:],</span><span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;Detector anomaly scores&quot;</span><span class="p">)</span>
+    <span class="c1"># initialise various variables</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N_anomalies</span><span class="p">)</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span> 
+    <span class="n">fd</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># false detections</span>
+    <span class="n">raw_score</span> <span class="o">=</span> <span class="mi">0</span>
 
-<span class="k">for</span> <span class="n">idx_label</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">ndenumerate</span><span class="p">(</span><span class="n">labels</span><span class="p">):</span>                  <span class="c1"># loop through labels</span>
-    <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="c1"># labelled anomalies i.e. window centre points)</span>
-
-        <span class="c1"># Include multiple labels into single window</span>
-        <span class="k">for</span> <span class="n">window_idx</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">windowSize2</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span>              <span class="c1"># search within this window for other labels</span>
-            <span class="k">if</span> <span class="n">labels</span><span class="p">[</span><span class="n">idx_label</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">window_idx</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>             <span class="c1"># if find other labelled anomalies within window</span>
-                <span class="n">y_zero</span> <span class="o">=</span> <span class="n">idx_label</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">window_idx</span> <span class="o">+</span> <span class="n">windowSize2</span> <span class="c1"># end point of window extended to include label</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">y_zero</span> <span class="o">=</span> <span class="n">idx_label</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">windowSize2</span>              <span class="c1"># end point of window is normal</span>
-        
-        <span class="c1"># Define window</span>
-        <span class="n">window</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">idx_label</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">windowSize2</span><span class="p">,</span> <span class="n">y_zero</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> 
-        
-        <span class="c1"># Calculate false negatives and detection weights</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">anomaly_score</span><span class="p">[</span><span class="n">window</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># if window is empty</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">window</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">8000</span><span class="p">,</span> <span class="n">window</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mi">8000</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
-            <span class="n">fd</span> <span class="o">+=</span> <span class="mi">1</span> <span class="c1"># create false negative</span>
-        <span class="k">else</span><span class="p">:</span>                                  <span class="c1"># if window not empty</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">window</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">8000</span><span class="p">,</span> <span class="n">window</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mi">8000</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">)</span>
-            <span class="c1"># find index of first detection within window</span>
-            <span class="k">for</span> <span class="n">idx_val</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">ndenumerate</span><span class="p">(</span><span class="n">anomaly_score</span><span class="p">[</span><span class="n">window</span><span class="p">]):</span>
-                <span class="k">if</span> <span class="n">val</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="c1"># calculate sigmoid weight based on relative position within window</span>
-                    <span class="n">y</span> <span class="o">=</span> <span class="n">idx_val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">window</span><span class="o">.</span><span class="n">size</span> <span class="c1"># position relative to end of window</span>
-                    <span class="n">weights</span><span class="p">[</span><span class="n">count</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
-                    <span class="k">break</span>
-            
-        <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span> <span class="c1"># for each anomaly</span>
+    <span class="c1"># plot output</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">labels</span><span class="p">[</span><span class="mi">8000</span><span class="p">:],</span><span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;Labelled anomalies&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">anomaly_score</span><span class="p">[</span><span class="mi">8000</span><span class="p">:],</span><span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;Detector anomaly scores&quot;</span><span class="p">)</span>
     
-<span class="n">raw_score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">+</span> <span class="n">Afn</span><span class="o">*</span><span class="n">fd</span>
+    <span class="c1"># find indicies of anomaly labels</span>
+    <span class="k">for</span> <span class="n">idx_label</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">ndenumerate</span><span class="p">(</span><span class="n">labels</span><span class="p">):</span>                  <span class="c1"># loop through labels</span>
+        <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="c1"># labelled anomalies i.e. window centre points)</span>
 
-<span class="c1"># Normalization</span>
-<span class="n">Sperfect</span> <span class="o">=</span> <span class="n">N_anomalies</span>
-<span class="n">Snull</span> <span class="o">=</span> <span class="o">-</span><span class="n">N_anomalies</span>
-<span class="n">Snorm</span> <span class="o">=</span> <span class="mi">100</span><span class="o">*</span><span class="p">((</span><span class="n">raw_score</span><span class="o">-</span><span class="n">Snull</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">Sperfect</span><span class="o">-</span><span class="n">Snull</span><span class="p">))</span>
-        
-<span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">2000</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Anomaly detection windows with NAB score = </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">Snorm</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">1.05</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">loc</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">borderaxespad</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+            <span class="c1"># Include multiple labels into single window</span>
+            <span class="k">for</span> <span class="n">window_idx</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">windowSize2</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span>              <span class="c1"># search within this window for other labels</span>
+                <span class="k">if</span> <span class="n">labels</span><span class="p">[</span><span class="n">idx_label</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">window_idx</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>             <span class="c1"># if find other labelled anomalies within window</span>
+                    <span class="n">y_zero</span> <span class="o">=</span> <span class="n">idx_label</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">window_idx</span> <span class="o">+</span> <span class="n">windowSize2</span> <span class="c1"># end point of window extended to include label</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">y_zero</span> <span class="o">=</span> <span class="n">idx_label</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">windowSize2</span>              <span class="c1"># end point of window is normal</span>
+
+            <span class="c1"># Define window</span>
+            <span class="n">window</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">idx_label</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">windowSize2</span><span class="p">,</span> <span class="n">y_zero</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> 
+
+            <span class="c1"># Calculate false negatives and detection weights</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">anomaly_score</span><span class="p">[</span><span class="n">window</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># if window is empty</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">window</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">8000</span><span class="p">,</span> <span class="n">window</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mi">8000</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
+                <span class="n">fd</span> <span class="o">+=</span> <span class="mi">1</span> <span class="c1"># create false negative</span>
+            <span class="k">else</span><span class="p">:</span>                                  <span class="c1"># if window not empty</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">window</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">8000</span><span class="p">,</span> <span class="n">window</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mi">8000</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">)</span>
+                <span class="c1"># find index of first detection within window</span>
+                <span class="k">for</span> <span class="n">idx_val</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">ndenumerate</span><span class="p">(</span><span class="n">anomaly_score</span><span class="p">[</span><span class="n">window</span><span class="p">]):</span>
+                    <span class="k">if</span> <span class="n">val</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="c1"># calculate sigmoid weight based on relative position within window</span>
+                        <span class="n">y</span> <span class="o">=</span> <span class="n">idx_val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">window</span><span class="o">.</span><span class="n">size</span> <span class="c1"># position relative to end of window</span>
+                        <span class="n">weights</span><span class="p">[</span><span class="n">count</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+                        <span class="k">break</span>
+
+            <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span> <span class="c1"># for each anomaly</span>
+
+    <span class="n">raw_score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">+</span> <span class="n">Afn</span><span class="o">*</span><span class="n">fd</span>
+
+    <span class="c1"># Normalization</span>
+    <span class="n">Sperfect</span> <span class="o">=</span> <span class="n">N_anomalies</span>
+    <span class="n">Snull</span> <span class="o">=</span> <span class="o">-</span><span class="n">N_anomalies</span>
+    <span class="n">Snorm</span> <span class="o">=</span> <span class="mi">100</span><span class="o">*</span><span class="p">((</span><span class="n">raw_score</span><span class="o">-</span><span class="n">Snull</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">Sperfect</span><span class="o">-</span><span class="n">Snull</span><span class="p">))</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">2000</span><span class="p">])</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Anomaly detection windows with NAB score = </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">Snorm</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">1.05</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">loc</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">borderaxespad</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    
+    <span class="k">return</span> <span class="n">Snorm</span>
+
+
+
+<span class="c1"># example</span>
+<span class="n">series</span> <span class="o">=</span> <span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;/home/codepan1/RestRunnerCode/alpha_Twitter_volume_AAPL.csv&quot;</span><span class="p">)</span>
+<span class="n">labels</span> <span class="o">=</span> <span class="n">series</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+<span class="n">anomaly_score</span> <span class="o">=</span> <span class="n">series</span><span class="p">[</span><span class="s2">&quot;anomaly_score&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+<span class="n">main</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">anomaly_score</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -12110,227 +12138,47 @@ kTyEyAAAAABJRU5ErkJggg==
 
 </div>
 
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[5]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>42.857138487111044</pre>
+</div>
+
+</div>
+
 </div>
 </div>
 
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[20]:</div>
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Visualise sigmoid function</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># # Visualise sigmoid function</span>
 
-<span class="c1"># Sigmoid score function</span>
-<span class="k">def</span> <span class="nf">sigmoid</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">Atp</span><span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">Afp</span><span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
-    <span class="k">return</span><span class="p">((</span><span class="n">Atp</span><span class="o">-</span><span class="n">Afp</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mf">0.5</span><span class="o">*</span><span class="n">y</span><span class="p">)))</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="c1"># # Sigmoid score function</span>
+<span class="c1"># def sigmoid(y, Atp= 1, Afp= -1):</span>
+<span class="c1">#     return((Atp-Afp)*(1/(1+np.exp(0.5*y)))-1)</span>
 
 
-<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="mi">141</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">y</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="c1"># x = np.arange(-141,100,1)</span>
+<span class="c1"># y = sigmoid(x)</span>
 
-<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="o">-</span><span class="mi">141</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Scaled sigmoid value&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Relative position&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="c1"># fig, ax = plt.subplots()</span>
+<span class="c1"># ax.plot(x,y)</span>
+<span class="c1"># ax.axvspan(-141, 0, alpha=0.2, color=&#39;red&#39;)</span>
+<span class="c1"># plt.ylabel(&quot;Scaled sigmoid value&quot;)</span>
+<span class="c1"># plt.xlabel(&quot;Relative position&quot;)</span>
+<span class="c1"># plt.show()</span>
 </pre></div>
 
 </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-
-
-<div class="output_png output_subarea ">
-<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZQAAAEKCAYAAAA1qaOTAAAABHNCSVQICAgIfAhkiAAAAAlwSFlz
-AAALEgAACxIB0t1+/AAAIABJREFUeJzt3XucXWV97/HPd26ZZGZCBhJiCIQExCpW5TJQqtV6AYy+
-lGChCPUSbyenPaKntV7CodWKpQftq0ertZWoEbwBiqWGGkWuaqtoAkYSwJCQgCTGJEAg95lk5nf+
-WM/AZpg9s5NZa+/M3t/3i/Xaaz1rrb1/a88MvzzPs9bzKCIwMzMbq6ZaB2BmZvXBCcXMzHLhhGJm
-ZrlwQjEzs1w4oZiZWS6cUMzMLBdOKGZmlgsnFDMzy4UTipmZ5aKl1gFU09SpU2P27NkHd/KuXdDf
-n2s8ZjXR3AwdHbWOwsaRu+6669GImDbacQ2VUGbPns3y5csP7uQf/ACmjfp9mh36tm6FuXNrHYWN
-I5IeruQ4N3mZmVkunFDMzCwXTihmZpYLJxQzM8uFE4qZmeWipglF0mJJWyStKrNfkj4raa2keySd
-UrJvvqQ1aZlfvajNzGw4ta6hXAWMdP/i64AT0rIA+DcASYcDHwP+ADgd+Jik7kIjNTOzEdX0OZSI
-+LGk2SMcMg/4amTzFN8paYqkGcArgZsj4nEASTeTJaZriojzhl9uYP36Adi849k7VVFRKh9+jw7o
-PcqUl9lR7vg83mO4cpV5k7yuZ6zvUeT3Wu7ne4DFw5Z3tIgpE5qYOqGJ2Z3NdLbW+t+CZs92qD/Y
-OBN4pGR7QyorV/4skhaQ1W6YNWvWQQVx4682cfvDAex6Rnkc1LuZjd3zJrdw1lET+LPjJzFzUnOt
-wzEDDv2EMmYRsQhYBNDT03NQOWDxO04b85PyWSVrmPIKy7L3KFNe7vgc3qOc4d4nyrxLHtdzoO9R
-VBzlyg/k5ztS+XA7Ati5P3iid4CtewdYs30/P9/ax7/9ehdffGAXH/r9Lt7zvElla4dm1XKoJ5SN
-wDEl20enso1kzV6l5XdULaqDcKBNQWM/uBYO+QDHrekAXdn6XOB9wIZd/Xx8xXYuv2cHj/YOcMmL
-u2oXoBm175QfzRLg7elurzOAJyNiE3ATcLak7tQZf3YqM2sYR3c0s+ilU3jb8ZO4cvUuvrV+d61D
-sgZX0xqKpGvIahpTJW0gu3OrFSAivgAsBV4PrAV2A+9M+x6X9AlgWXqrywY76M0aiSQ+fnIXq5/c
-xydX7mTu0e1Mdoe91Uit7/K6aJT9Aby3zL7FwOIi4jIbT5ok/vakyZxzy2P86/27WOimL6sR/1PG
-rA68qLuVuTMncN363ewb8P2HVhtOKGZ14k9mT2RbX/CTzb21DsUalBOKWZ344+dMYEqb+O5v9tY6
-FGtQTihmdaKtSbz+6HZ+uLGXPjd7WQ04oZjVkZdPn8Ce/uDebftqHYo1ICcUszpyyhGtANz1mBOK
-VZ8TilkdmT6xmZmTmvilE4rVgBOKWZ059Yg2lj/aV3Z8MbOiOKGY1ZlTp7ayee8Av90zUOtQrME4
-oZjVmZccnvWjrHLHvFWZE4pZnZnTmY2otH7H/hpHYo3GCcWszhzWls3s+NDO/lqHYg3GCcWsDs3p
-amadayhWZU4oZnVoTmcL611DsSpzQjGrQ3O6mtm6d4Ad+3ynl1VPTROKpLmSVktaK2nhMPs/LWlF
-Wh6Q9ETJvv6SfUuqG7nZoW1OV9Yx734Uq6aaTbAlqRn4PHAWsAFYJmlJRNw3eExE/FXJ8e8DTi55
-iz0RcVK14jUbT+Z0NgOwbsd+XtTdWuNorFHUsoZyOrA2ItZFRB9wLTBvhOMvAq6pSmRm49yxnS0I
-11CsumqZUGYCj5Rsb0hlzyLpWGAOcFtJcbuk5ZLulHRucWGajT/tzWJqexObdjuhWPXUdE75A3Ah
-cH1ElP51HBsRGyUdB9wmaWVEPDj0REkLgAUAs2bNqk60ZoeA6e1NbPbwK1ZFtayhbASOKdk+OpUN
-50KGNHdFxMb0ug64g2f2r5QetygieiKiZ9q0aWON2WzcmD6xmc17XUOx6qllQlkGnCBpjqQ2sqTx
-rLu1JD0f6AZ+VlLWLWlCWp8KvAy4b+i5Zo3syIlNbHENxaqoZk1eEbFf0sXATUAzsDgi7pV0GbA8
-IgaTy4XAtfHMsbhfAFwpaYAsKV5ReneYmcH09mYe7R1g30DQ2qRah2MNoKZ9KBGxFFg6pOyjQ7b/
-bpjzfgq8qNDgzMa56ROzBoitewc4alJzjaOxRuAn5c3q1GBC2bzH/ShWHU4oZnXqyPasVrJ5r/tR
-rDqcUMzq1GANZYtrKFYlTihmdeqICU00Cz+LYlXjhGJWp5okjmxvcpOXVY0TilkdO3JiszvlrWqc
-UMzq2LT2Jra6hmJV4oRiVse625rY1uuEYtXhhGJWx7rbxLa+AZ450IRZMZxQzOrYlAlN9A3Ann4n
-FCueE4pZHetuy/7Et/U5oVjxnFDM6thTCcX9KFYFTihmdWzKhOxP/Ik+JxQrnhOKWR3rbsuGrd/m
-hGJV4IRiVscGm7ye6HUfihXPCcWsjg02ebmGYtVQ04Qiaa6k1ZLWSlo4zP53SNoqaUVa3lOyb76k
-NWmZX93IzcaHtibR0SInFKuKms3YKKkZ+DxwFrABWCZpyTBT+V4XERcPOfdw4GNADxDAXencbVUI
-3WxcmdImnvBdXlYFo9ZQJE2S9LeSvpi2T5D0hhw++3RgbUSsi4g+4FpgXoXnvha4OSIeT0nkZmBu
-DjGZ1Z3utibXUKwqKmny+grQC/xh2t4I/H0Onz0TeKRke0MqG+o8SfdIul7SMQd4rlnD657Q5Acb
-rSoqSSjHR8SngH0AEbEbUKFRPe1GYHZEvJisFnL1gb6BpAWSlktavnXr1twDNDvUTWlrcpOXVUUl
-CaVP0kSyvgokHU9WYxmrjcAxJdtHp7KnRMRjETH4WV8CTq303JL3WBQRPRHRM23atBzCNhtf3ORl
-1VJJQvkY8APgGEnfAG4FPpzDZy8DTpA0R1IbcCGwpPQASTNKNs8B7k/rNwFnS+qW1A2cncrMbIgp
-E8T2fcH+ATd7WbFGvcsrIm6WdDdwBllT1/+OiEfH+sERsV/SxWSJoBlYHBH3SroMWB4RS4D3SzoH
-2A88Drwjnfu4pE+QJSWAyyLi8bHGZFaPBh9u3L4vOHxCtVqrrRGNmlAkvSKt7kivJ0oiIn481g+P
-iKXA0iFlHy1ZvwS4pMy5i4HFY43BrN51tWYJZce+AQ6f4GeZrTiVPIfyoZL1drLbfe8CXl1IRGaW
-q67WrFayY5+bvKxYlTR5vbF0O926+5nCIjKzXA0mlO373DFvxTqY+u8G4AV5B2JmxZj8VJOXayhW
-rEr6UD5HumWYLAGdBNxdZFBmlh/XUKxaKulDWV6yvh+4JiL+u6B4zCxnrqFYtVTSh3LAT6eb2aGj
-053yViVlE4qklTzd1PWMXUCk4VDM7BDX2iQmNosdbvKygo1UQ8ljRGEzOwR0tco1FCtc2YQSEQ9X
-MxAzK06WUFxDsWJVMh/KGZKWSdopqU9Sv6Tt1QjOzPLR1drkGooVrpLnUP4FuAhYA0wE3kM206KZ
-jRNdrdkAkWZFqujBxohYCzRHRH9EfAXPjmg2rkxubXKTlxWukudQdqfh5VdI+hSwiYN7wt7MamSy
-O+WtCipJDG9Lx10M7CKb2Oq8IoMys3y5U96qoZIayqnA9yJiO/DxguMxswJ0tTaxtx/6BoK2Wgdj
-dauSGsobgQckfU3SGyRVkoTM7BDiIeytGkZNKBHxTuC5wLfJ7vZ6UNKX8vhwSXMlrZa0VtLCYfZ/
-QNJ9ku6RdKukY0v29UtakZYlQ881s6eVTrJlVpSKahsRsU/S98mGYpkInEt2+/BBk9RMdvvxWWRD
-4i+TtCQi7is57JdAT0TslvQXwKeAN6d9eyLipLHEYNYoJre5hmLFq+TBxtdJuorsOZTzgC8Bz8nh
-s08H1kbEuojoA64F5pUeEBG3R8TutHkncHQOn2vWcFxDsWqopA/l7cB/AL8XEe+IiKURsT+Hz54J
-PFKyvSGVlfNu4Psl2+2Slku6U9K55U6StCAdt3zr1q1ji9hsnHp6ThTXUKw4lQxff1E1AhmJpLcC
-PcAflxQfGxEbJR0H3CZpZUQ8OPTciFgELALo6enxX5M1pK6WLKHs3Bf4Ni8rSi0fUNxI9kzLoKNT
-2TNIOhO4FDgnInoHyyNiY3pdB9wBnFxksGbjWUdq8tq1301eVpxaJpRlwAmS5qQn8S8EnnG3lqST
-gSvJksmWkvJuSRPS+lTgZUBpZ76ZlegsraGYFaRmz5RExH5JFwM3Ac3A4oi4V9JlwPKIWAL8I9AJ
-fFsSwG8i4hzgBcCVkgbIkuIVQ+4OM7MSE5pFq2DnficUK87BzNgIQB4zNkbEUmDpkLKPlqyfWea8
-nwIvGuvnmzWSzlaxyzUUK1AlMza+N71+Lb2+pbhwzKwoHS1N7HQfihVo1BkbJZ0VEaUd3gsl3Q08
-68l2Mzt0dbbKfShWqEo65SXpZSUbL63wPDM7hHS2yH0oVqhKOuXfDSyWdBggYBvwrkKjMrPcdbSK
-J3qdUKw4lTzYeBfwkpRQiIgnC4/KzHLX2dLEI7v21ToMq2Mj3eX11oj4uqQPDCkHICL+X8GxmVmO
-nr7LS7UOxerUSDWUjvTaVY1AzKxYnS1i134nFCvOSHd5XZlePUujWR3oaM065QcifFeNFaKS4euP
-lnSDpC1p+Y4kDyNvNs50tmR/7rv7axyI1a1K/qHyFbIxto5Ky42pzMzGkc40hP1OJxQrSCUJZVpE
-fCUi9qflKmBawXGZWc46BgeIzGM2I7NhVJJQHpP0VknNaXkr8FjRgZlZvrpcQ7GCVZJQ3gVcAPwO
-2AScD7yzyKDMLH8dqQ9llxOKFaSSBxsfBs6pQixmViA3eVnRRk0okuYA7wNmlx6f5iUxs3Hi6SYv
-D79ixaikyes/gIeAzwH/VLKMmaS5klZLWivpWaMXS5og6bq0/+eSZpfsuySVr5b02jziMatngzUU
-N3lZUSoZHHJvRHw27w+W1Ax8HjgL2AAsk7RkyMyL7wa2RcRzJV0IfBJ4s6QTyaYMfiHZrcy3SHpe
-RPhPxayMzjSv/A43eVlBKqmh/LOkj0n6Q0mnDC45fPbpwNqIWBcRfcC1wLwhx8wDrk7r1wOvUTaY
-2Dzg2ojojYj1wNr0fmZWxoQmaJFrKFacSmooLwLeBrwaGJzuLdL2WMwEHinZ3gD8Qblj0hz0TwJH
-pPI7h5w7c4zxmNU1SXS0yJ3yVphKEsqfAselWsS4I2kBsABg1qxZNY7GrLY6W+VOeStMJU1eq4Ap
-BXz2RuCYku2jU9mwx0hqAQ4je6iyknMBiIhFEdETET3TpvkBf2tsnS1N7HJCsYJUklCmAL+WdJOk
-JYNLDp+9DDhB0hxJbWSd7EPfdwkwP62fD9wWEZHKL0x3gc0BTgB+kUNMZnWts9VNXlacSpq8PlbE
-B6c+kYuBm4BmYHFE3CvpMmB5RCwBvgx8TdJa4HGypEM67lvAfcB+4L2+w8tsdB0t4slx2Xht40El
-T8r/qKgPj4ilwNIhZR8tWd9L1ocz3LmXA5cXFZtZPepsFRv9Ty8rSCVPyu8gu6ur1JPAcuCvI2Jd
-EYGZWf46W5rY5SYvK0glTV6fIbst95tkc4deCBwP3A0sBl5ZVHBmlq+OVnm0YStMJZ3y50TElRGx
-IyK2R8Qi4LURcR3QXXB8Zpajrhaxqx+ye1vM8lVJQtkt6QJJTWm5ANib9vm30mwc6WhtIoDdfa6m
-WP4qSShvIXtSfguwOa2/VdJE4OICYzOznD01hH2vO1Isf5Xc5bUOeGOZ3f+VbzhmVqSnhrDv3c/0
-Gsdi9adsQpH04Yj4lKTPMUzTVkS8v9DIzCx3T9VQ9rqGYvkbqYZyf3pdXo1AzKx4g0PY73KTlxWg
-bEKJiBvT6+Dw8UhqAjojYnsVYjOznHWmGsoOJxQrwKid8pK+KWmypA6ygSLvk/Sh4kMzs7w9NWuj
-E4oVoJK7vE5MNZJzge8Dc8ju9DKzcaaz1QnFilNJQmmV1EqWUJZExD78/InZuNTZkqYBdkKxAlSS
-UK4EHgI6gB9LOhZwH4rZONTenA3t7RqKFWHUhBIRn42ImRHx+jQXyW+AVxUfmpnlLZsG2LcNWzEq
-GRzyGVJS8W+j2TjV2Qw7ez30iuWvkiYvM6sjnc1u8rJi1CShSDpc0s2S1qTXZ41aLOkkST+TdK+k
-eyS9uWTfVZLWS1qRlpOqewVm41dHi8fysmKMNPTKn4x0YkT8+xg+dyFwa0RcIWlh2v7IkGN2A2+P
-iDWSjgLuknRTRDyR9n8oIq4fQwxmDamz2Xd5WTFG6kMZHBDySOClwG1p+1XAT4GxJJR5PD0x19XA
-HQxJKBHxQMn6byVtAaYBT2BmB62zGTY5oVgByjZ5RcQ7I+KdQCvZw43nRcR5wAtT2VhMj4hNaf13
-MPLAp5JOB9qAB0uKL09NYZ+WNGGM8Zg1jM4W+S4vK0Qld3kdU/I/f8jmRJk12kmSbgGeM8yuS0s3
-IiIklX1QUtIM4GvA/IgYSMWXkCWiNmARWe3msjLnLwAWAMyaNWrYZnWvqwV27N1X6zCsDlWSUG6V
-dBNwTdp+M3DLaCdFxJnl9knaLGlGRGxKCWNLmeMmA98DLo2IO0veezDB9Ur6CvDBEeJYRJZ06Onp
-8RP+1vC6mmFXXz/9A0Fzk2odjtWRSh5svBj4AvCStCyKiPeN8XOXAPPT+nzgu0MPkNQG3AB8dWjn
-e0pCSBLZkDCrxhiPWcPoSv+MdLOX5a3SBxvvBnZExC2SJknqiogdY/jcK4BvSXo38DBwAYCkHuDP
-I+I9qewVwBGS3pHOe0dErAC+IWkaIGAF8OdjiMWsoUxOf/Xb9+7jsElj7Q41e9qoCUXS/yDrgzgc
-OB6YSVZjec3BfmhEPDbc+RGxHHhPWv868PUy57/6YD/brNF1tQgIdriGYjmr5MHG9wIvIw0IGRFr
-yG4lNrNxqKs5e3XHvOWtkoTSGxF9gxuSWvDw9Wbj1mCTl2solrdKEsqPJP0fYKKks4BvAzcWG5aZ
-FaWrpA/FLE+VJJSFwFZgJfA/gaXA3xQZlJkVp8s1FCvIqJ3y6WHCL6bFzMa5pxOKayiWr5EGh1zJ
-CH0lEfHiQiIys0JNaBJtLU2uoVjuRqqhvKFqUZhZVU1ub2G7E4rlrGxCiYiHqxmImVVPV3urm7ws
-d6N2yks6Q9IySTsl9Unql7S9GsGZWTEmt7e4yctyV8ldXv8CXASsASaSPcn++SKDMrNiuYZiRaho
-CuCIWAs0R0R/RHwFmFtsWGZWpC7XUKwAlQwOuTuN/LtC0qeATdRoLnozy4cTihWhksTwtnTcxcAu
-4BjgvCKDMrNidbW3+kl5y10lNZRHgb6I2At8XFIz4Cl3zcaxrvYWdvf1s79/gJZmNzhYPir5TboV
-mFSyPZEKZmw0s0NXV3s2D8rOXjd7WX4qSSjtEbFzcCOtTxrheDM7xE1uzxon3I9ieaokoeySdMrg
-hqRTgT1j+VBJh0u6WdKa9Npd5rh+SSvSsqSkfI6kn0taK+m6dNOAmVXosIlZDeWJ3e5HsfxUklD+
-Evi2pJ9I+i/gOrIO+rFYCNwaESeQNaktLHPcnog4KS3nlJR/Evh0RDwX2Aa8e4zxmDWU7o7s32Db
-dveNcqRZ5UZNKBGxDHg+8Bdkc7e/ICLuGuPnzgOuTutXA+dWeqIkAa8Grj+Y880MutNc8k4olqey
-CUXSaZKeAxAR+4BTgMuBf5J0+Bg/d3pEbErrvwOmlzmuXdJySXdKGkwaRwBPRMRg4+8Gsnnuy13H
-gvQey7du3TrGsM3qw5RJWQ3FTV6Wp5FqKFcCfQCSXgFcAXwVeBJYNNobS7pF0qphlnmlx0VEUH6Y
-/GMjogf4M+Azko4f/ZKeKSIWRURPRPRMmzbtQE83q0tTJrqGYvkb6TmU5oh4PK2/GVgUEd8BviNp
-xWhvHBFnltsnabOkGRGxSdIMYEuZ99iYXtdJugM4GfgOMEVSS6qlHA1sHC0eM3taS3MTXe0trqFY
-rkaqoTRLGkw4rwFuK9lXyQORI1kCzE/r84HvDj1AUrekCWl9KvAy4L5Uo7kdOH+k881sZN2T2lxD
-sVyNlFCuAX4k6btktwn/BEDSc8mavcbiCuAsSWuAM9M2knokfSkd8wJguaRfkSWQKyLivrTvI8AH
-JK0l61P58hjjMWs43ZNa2eYaiuVopAm2Lpd0KzAD+GGqGUCWhN43lg+NiMfIaj1Dy5eTDY9PRPwU
-eFGZ89cBp48lBrNGN8U1FMvZiE1XEXHnMGUPFBeOmVVL96RW1j26c/QDzSrkUeHMGtSUSW08sctN
-XpYfJxSzBtU9qY0dvfvZ1z9Q61CsTjihmDWo7g6P52X5ckIxa1BPPy3vjnnLhxOKWYN6ejwv11As
-H04oZg2qe5JHHLZ8OaGYNagpgzWUXU4olg8nFLMGNbVzAgCP7uytcSRWL5xQzBpUe2szh01sZfN2
-JxTLhxOKWQObPnkCm7fvrXUYViecUMwa2PTJ7Wze4RqK5cMJxayBHdnVzhbXUCwnTihmDWz65Als
-2dHLwEC5SVPNKueEYtbApk9up38geMy3DlsOnFDMGtj0ydmtw+6YtzzUJKFIOlzSzZLWpNfuYY55
-laQVJcteSeemfVdJWl+y76TqX4XZ+Hfk5HYAtuxwQrGxq1UNZSFwa0ScANyatp8hIm6PiJMi4iTg
-1cBu4Iclh3xocH9ErKhK1GZ1ZnpKKH4WxfJQq4QyD7g6rV8NnDvK8ecD34+I3YVGZdZgpnW6ycvy
-U6uEMj0iNqX13wHTRzn+QuCaIWWXS7pH0qclTSh3oqQFkpZLWr5169YxhGxWf9pamjiio801FMtF
-YQlF0i2SVg2zzCs9LiICKHvPoqQZwIuAm0qKLwGeD5wGHA58pNz5EbEoInoiomfatGljuSSzuvSc
-w9r57RN7ah2G1YGWot44Is4st0/SZkkzImJTShhbRnirC4AbIuKpSRtKaje9kr4CfDCXoM0a0Oyp
-Hdy78clah2F1oFZNXkuA+Wl9PvDdEY69iCHNXSkJIUlk/S+rCojRrCHMOaKDR7btoW+/55a3salV
-QrkCOEvSGuDMtI2kHklfGjxI0mzgGOBHQ87/hqSVwEpgKvD3VYjZrC7NmdpB/0DwyDbf82JjU1iT
-10gi4jHgNcOULwfeU7L9EDBzmONeXWR8Zo1kzrQOANZv3cXx0zprHI2NZ35S3qzBHTc1JZRHd9U4
-EhvvnFDMGtyUSW10T2pl/WNOKDY2TihmxpypHazf6oRiY+OEYmbMmdrJukd31joMG+ecUMyMF8zo
-YvP2Xk+2ZWPihGJmnHpsNuD33b/ZVuNIbDxzQjEzXnjUYbS1NHHXw04odvCcUMyMtpYmXjzzMCcU
-GxMnFDMDsmavVRu307u/v9ah2DjlhGJmAJxybDd9/QOupdhBc0IxMwBefsJUJrU1c+OvflvrUGyc
-ckIxMwAmtbVw9onTWbryd272soPihGJmT5l38kye3LOPO1Z7dlM7cE4oZvaUlz93KjOnTORzt61h
-YKDsRKpmw3JCMbOntDQ38eG5v8eqjdu5/u4NtQ7HxpmaJBRJfyrpXkkDknpGOG6upNWS1kpaWFI+
-R9LPU/l1ktqqE7lZ/TvnJUdx6rHdfHzJvazc4KmBrXK1qqGsAv4E+HG5AyQ1A58HXgecCFwk6cS0
-+5PApyPiucA24N3FhmvWOCTxr285he6ONt765Z9z469+S4Sbv2x0NUkoEXF/RKwe5bDTgbURsS4i
-+oBrgXlpHvlXA9en464mm1fezHIyfXI733zPGcw+YhLvu+aXzP3MT/jnW9Zw++otrN2ygz19vgvM
-nq0mUwBXaCbwSMn2BuAPgCOAJyJif0n5s6YJNrOxmXXEJL7zFy/l3+/eyDd/8Rs+c+sDlFZUmptE
-e0sTE9uamdDSDICUFoSUHSeyWo/SxuC2Vdfi+acx64hJhX5GYQlF0i3Ac4bZdWlEfLeozx0mjgXA
-AoBZs2ZV62PN6kJLcxMXnHYMF5x2DE/s7mPNlp1s3LaH3z65h129+9m7b4C9+/rZu2+AIEj/PdVE
-lq0/XRaDhVZ1bS3FN0gVllAi4swxvsVG4JiS7aNT2WPAFEktqZYyWF4ujkXAIoCenh7/KpsdpCmT
-2jht9uGcNrvWkdih6lC+bXgZcEK6o6sNuBBYEtk/fW4Hzk/HzQeqVuMxM7Ph1eq24TdJ2gD8IfA9
-STel8qMkLQVItY+LgZuA+4FvRcS96S0+AnxA0lqyPpUvV/sazMzsmWrSKR8RNwA3DFP+W+D1JdtL
-gaXDHLeO7C4wMzM7RBzKTV5mZjaOOKGYmVkunFDMzCwXTihmZpYLJxQzM8uFGmnQN0lbgYdLiqYC
-j9YonFrztTeuRr7+Rr52OPjrPzYipo12UEMllKEkLY+IssPn1zNfe2NeOzT29TfytUPx1+8mLzMz
-y4UTipmZ5aLRE8qiWgdQQ772xtXI19/I1w4FX39D96GYmVl+Gr2GYmZmOWmIhCLpTyXdK2lAUk9J
-+WxJeyStSMsXSvadKmmlpLWSPqtxPMVcuetP+y5J17ha0mtLyuemsrWSFlY/6vxJ+jtJG0t+3q8v
-2Tfs91BP6vFnOhpJD6W/4xWSlqeywyXdLGlNeu2udZx5kLRY0hZJq0rKhr1WZT6bfhfukXRKLkFE
-RN0vwAuA3wPuAHpKymcDq8qc8wvgDLIZS78PvK7W11HA9Z8I/AqYAMwBHgSa0/IgcBzQlo45sdbX
-kcP38HfAB4cpH/Z7qHW8OV97Xf5MK7juh4CpQ8o+BSxM6wuBT9Y6zpyu9RXAKaX/Tyt3rWSjun8/
-/f/tDODnecTQEDWUiLg/IlZXerykGcDkiLgzsm//q8C5hQVYsBGufx5wbUT0RsR6YC3ZtACnA2sj
-Yl1E9AHXpmPrVbnvoZ402s90JPOAq9P61Yzjv+1SEfFj4PEhxeWudR7w1cjcSTYL7oyxxtAQCWUU
-cyT9UtL5dv2AAAAFsklEQVSPJL08lc0ENpQcsyGV1ZuZwCMl24PXWa68HlycqviLS5o66vl6BzXC
-NQ4ngB9KukvSglQ2PSI2pfXfAdNrE1pVlLvWQn4fajLBVhEk3QI8Z5hdl0ZEuSmCNwGzIuIxSacC
-/yHphYUFWaCDvP66M9L3APwb8Amy/8l8Avgn4F3Vi85q4I8iYqOkI4GbJf26dGdEhKSGuNW1Gtda
-NwklIs48iHN6gd60fpekB4HnARuBo0sOPTqVHbIO5vrJrumYku3S6yxXfkir9HuQ9EXgP9PmSN9D
-vWiEa3yWiNiYXrdIuoGs6W+zpBkRsSk182ypaZDFKnethfw+NHSTl6RpkprT+nHACcC6VEXcLumM
-dHfX24F6/Ff+EuBCSRMkzSG7/l8Ay4ATJM2R1AZcmI4d14a0Eb8JGLwbptz3UE/q8mc6EkkdkroG
-14GzyX7mS4D56bD51Off9qBy17oEeHu62+sM4MmSprGDV+s7E6p098ObyNoIe4HNwE2p/DzgXmAF
-cDfwxpJzesh++R4E/oX0EOh4XMpdf9p3abrG1ZTcyUZ2F8gDad+ltb6GnL6HrwErgXvSH9SM0b6H
-elrq8Wc6yvUeR3Y326/S3/mlqfwI4FZgDXALcHitY83peq8ha8bfl/7e313uWsnu7vp8+l1YScnd
-n2NZ/KS8mZnloqGbvMzMLD9OKGZmlgsnFDMzy4UTipmZ5cIJxczMcuGEYg1BUn8acXaVpBslTang
-nJ2j7J8i6X+VbB8l6fo84s2DpMsknZnW/1LSpJJ9Syv5DswOhG8btoYgaWdEdKb1q4EHIuLySs8p
-s3828J8R8ft5xloESQ+RPWvwaK1jsfrlGoo1op9RMhCepA9JWpYGjfz40IMldUq6VdLdaW6NwVF6
-rwCOTzWff1Q2v86qdM6dpePCSbpDUk96enuxpF+kQUmfNeKvpFdK+rGk76X5S74gqSntuyjFsErS
-J1NZs6SrUtlKSX+Vyq+SdL6k9wNHAbdLuj3te0jS1LT+gXTuKkl/mcpmS7pf0heVzaXzQ0kTc/ju
-rZ7V+ulOL16qsQA702sz8G1gbto+m2yebZH9A+s/gVcMOaeFbDoDgKlkw9uLIfPplG4DfwV8PK3P
-AFan9X8A3prWp5A9ud4xJNZXAnvJnvRuBm4GzidLCr8BpqWYbiMbjvxU4OaS86ek16uA89P6Q5TM
-CzK4nc5dCXQAnWRPlJ+crmU/cFI6/luDcXvxUm5xDcUaxURJK3h6CO+bU/nZafkl2fA7zycby6uU
-gH+QdA/Z8BUzGX3I82+RJQGAC4DBvpWzgYUpljuAdmDWMOf/IrK5S/rJhtT4I+A04I6I2BoR+4Fv
-kE2qtA44TtLnJM0Fto8SW6k/Am6IiF0RsRP4d2BwGof1EbEird9FlmTMyqqb0YbNRrEnIk5KHdM3
-Ae8FPkuWLP5vRFw5wrlvIasVnBoR+1J/RPtIHxbZkOmPSXox8Gbgz9MuAefF6BO+De3cLNvZGRHb
-JL0EeG36nAvIZ1j+3pL1fsBNXjYi11CsoUTEbuD9wF9LaiFLLu+SNNhhPzPNnVHqMGBLSiavAo5N
-5TuArhE+7jrgw8BhEXFPKrsJeF8axRpJJ5c59/Q0MnATWUL6L7IRkP9Y0tQ0SvZFwI9SX0hTRHwH
-+BuyaWCHKhfrT4BzJU1KI/K+KZWZHTAnFGs4EfFLshGHL4qIHwLfBH4maSVZ09TQ//F+A+hJ+98O
-/Dq9z2PAf6fO7H8c5qOuJxsm/lslZZ8AWoF7JN2btoezjGyU6/uB9WTNUpvI5gW/nWwE3bsimzxt
-JnBHakb7OnDJMO+3CPjBYKd8yXdxN1lfyy+AnwNfSt+P2QHzbcNmhxhJrwQ+GBFvqHUsZgfCNRQz
-M8uFayhmZpYL11DMzCwXTihmZpYLJxQzM8uFE4qZmeXCCcXMzHLhhGJmZrn4/6fwKeqtiA2gAAAA
-AElFTkSuQmCC
-"
->
-</div>
-
-</div>
-
 </div>
 </div>
 

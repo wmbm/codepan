@@ -13,29 +13,29 @@
 # ~/nupic/scripts/run_swarm.py --overwrite ~/myswarm/data/search_def.json 
 
 
-# In[2]:
+# In[3]:
 
 
 # Set up opf model and extract anomalies from data
 
-import matplotlib.pylab as plt
+import matplotlib.pyplot as plt
 import yaml
 import csv
 import datetime
 from nupic.algorithms import anomaly_likelihood
 from nupic.frameworks.opf.model_factory import ModelFactory
 import importlib
-import SimAnomalyDataset as sim
+from SimAnomalyDataset import get_data
 
-modelParams = importlib.import_module("model_params").MODEL_PARAMS # best_model_params / model_params
+modelParams = importlib.import_module("best_model_params").MODEL_PARAMS # best_model_params / model_params
 
 # Create dataset
 datalabels=["dttm","value"]
-data, anomaly_loc, anomaly_dur, dates = sim.get_data(n=0,datalabels=datalabels)
+data, anomaly_loc, anomaly_dur, dates = get_data(n=0,datalabels=datalabels)
       
 
 
-# In[3]:
+# In[ ]:
 
 
 

@@ -11812,25 +11812,25 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[2]:</div>
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="c1"># Set up opf model and extract anomalies from data</span>
 
-<span class="kn">import</span> <span class="nn">matplotlib.pylab</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">yaml</span>
 <span class="kn">import</span> <span class="nn">csv</span>
 <span class="kn">import</span> <span class="nn">datetime</span>
 <span class="kn">from</span> <span class="nn">nupic.algorithms</span> <span class="kn">import</span> <span class="n">anomaly_likelihood</span>
 <span class="kn">from</span> <span class="nn">nupic.frameworks.opf.model_factory</span> <span class="kn">import</span> <span class="n">ModelFactory</span>
 <span class="kn">import</span> <span class="nn">importlib</span>
-<span class="kn">import</span> <span class="nn">SimAnomalyDataset</span> <span class="kn">as</span> <span class="nn">sim</span>
+<span class="kn">from</span> <span class="nn">SimAnomalyDataset</span> <span class="kn">import</span> <span class="n">get_data</span>
 
-<span class="n">modelParams</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s2">&quot;model_params&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">MODEL_PARAMS</span> <span class="c1"># best_model_params / model_params</span>
+<span class="n">modelParams</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s2">&quot;best_model_params&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">MODEL_PARAMS</span> <span class="c1"># best_model_params / model_params</span>
 
 <span class="c1"># Create dataset</span>
 <span class="n">datalabels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;dttm&quot;</span><span class="p">,</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
-<span class="n">data</span><span class="p">,</span> <span class="n">anomaly_loc</span><span class="p">,</span> <span class="n">anomaly_dur</span><span class="p">,</span> <span class="n">dates</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">datalabels</span><span class="o">=</span><span class="n">datalabels</span><span class="p">)</span>
+<span class="n">data</span><span class="p">,</span> <span class="n">anomaly_loc</span><span class="p">,</span> <span class="n">anomaly_dur</span><span class="p">,</span> <span class="n">dates</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">datalabels</span><span class="o">=</span><span class="n">datalabels</span><span class="p">)</span>
       
 </pre></div>
 
@@ -11838,10 +11838,43 @@ div#notebook {
 </div>
 </div>
 
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_text output_error">
+<pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">ZeroDivisionError</span>                         Traceback (most recent call last)
+<span class="ansi-green-fg">&lt;ipython-input-3-b8a4bf0dbf9f&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span><span class="ansi-blue-fg">()</span>
+<span class="ansi-green-intense-fg ansi-bold">     14</span> <span class="ansi-red-fg"># Create dataset</span>
+<span class="ansi-green-intense-fg ansi-bold">     15</span> datalabels<span class="ansi-blue-fg">=</span><span class="ansi-blue-fg">[</span><span class="ansi-blue-fg">&#34;dttm&#34;</span><span class="ansi-blue-fg">,</span><span class="ansi-blue-fg">&#34;value&#34;</span><span class="ansi-blue-fg">]</span>
+<span class="ansi-green-fg">---&gt; 16</span><span class="ansi-red-fg"> </span>data<span class="ansi-blue-fg">,</span> anomaly_loc<span class="ansi-blue-fg">,</span> anomaly_dur<span class="ansi-blue-fg">,</span> dates <span class="ansi-blue-fg">=</span> get_data<span class="ansi-blue-fg">(</span>n<span class="ansi-blue-fg">=</span><span class="ansi-cyan-fg">0</span><span class="ansi-blue-fg">,</span>datalabels<span class="ansi-blue-fg">=</span>datalabels<span class="ansi-blue-fg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">     17</span> 
+
+<span class="ansi-green-fg">/home/codepan1/RestRunnerCode/SimAnomalyDataset.pyc</span> in <span class="ansi-cyan-fg">get_data</span><span class="ansi-blue-fg">(n, datalabels)</span>
+<span class="ansi-green-intense-fg ansi-bold">     58</span>     fs_dur <span class="ansi-blue-fg">=</span> dur_base                 <span class="ansi-red-fg"># anomaly duration</span>
+<span class="ansi-green-intense-fg ansi-bold">     59</span>     fs_range <span class="ansi-blue-fg">=</span>  np<span class="ansi-blue-fg">.</span>arange<span class="ansi-blue-fg">(</span>fs_loc<span class="ansi-blue-fg">,</span>fs_loc<span class="ansi-blue-fg">+</span>fs_dur<span class="ansi-blue-fg">)</span>
+<span class="ansi-green-fg">---&gt; 60</span><span class="ansi-red-fg">     </span>fs_shift <span class="ansi-blue-fg">=</span>  np<span class="ansi-blue-fg">.</span>arange<span class="ansi-blue-fg">(</span><span class="ansi-cyan-fg">1</span><span class="ansi-blue-fg">,</span>fs<span class="ansi-blue-fg">,</span><span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">(</span>fs<span class="ansi-blue-fg">-</span><span class="ansi-cyan-fg">1</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">/</span>fs_dur<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">     61</span>     data<span class="ansi-blue-fg">[</span>fs_range<span class="ansi-blue-fg">]</span> <span class="ansi-blue-fg">=</span><span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">(</span>A_base<span class="ansi-blue-fg">/</span><span class="ansi-cyan-fg">2</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">*</span>np<span class="ansi-blue-fg">.</span>sin<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">(</span>T_day<span class="ansi-blue-fg">*</span><span class="ansi-blue-fg">(</span>fs_range<span class="ansi-blue-fg">/</span>fs_shift<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">)</span> <span class="ansi-blue-fg">+</span><span class="ansi-blue-fg">(</span>A_base<span class="ansi-blue-fg">/</span><span class="ansi-cyan-fg">2</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">*</span>np<span class="ansi-blue-fg">.</span>sin<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">(</span>T_week<span class="ansi-blue-fg">*</span><span class="ansi-blue-fg">(</span>fs_range<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">     62</span> 
+
+<span class="ansi-red-fg">ZeroDivisionError</span>: division by zero</pre>
+</div>
+</div>
+
+</div>
+</div>
+
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[3]:</div>
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="c1"># Create OPF Model &amp; Load parameters into model space</span>
@@ -11907,61 +11940,6 @@ div#notebook {
 </pre></div>
 
 </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_text output_error">
-<pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">TypeError</span>                                 Traceback (most recent call last)
-<span class="ansi-green-fg">&lt;ipython-input-3-20e0718dcef2&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span><span class="ansi-blue-fg">()</span>
-<span class="ansi-green-intense-fg ansi-bold">     50</span> 
-<span class="ansi-green-intense-fg ansi-bold">     51</span>         anomaly_Likelihood_r = anomaly_likelihood_helper.anomalyProbability(
-<span class="ansi-green-fg">---&gt; 52</span><span class="ansi-red-fg">             </span>modelInput<span class="ansi-blue-fg">[</span>datalabels<span class="ansi-blue-fg">[</span><span class="ansi-cyan-fg">1</span><span class="ansi-blue-fg">]</span><span class="ansi-blue-fg">]</span><span class="ansi-blue-fg">,</span> anomaly_score_r<span class="ansi-blue-fg">,</span> modelInput<span class="ansi-blue-fg">[</span>datalabels<span class="ansi-blue-fg">[</span><span class="ansi-cyan-fg">0</span><span class="ansi-blue-fg">]</span><span class="ansi-blue-fg">]</span>
-<span class="ansi-green-intense-fg ansi-bold">     53</span>         )
-<span class="ansi-green-intense-fg ansi-bold">     54</span> 
-
-<span class="ansi-green-fg">/usr/local/lib/python2.7/dist-packages/nupic/algorithms/anomaly_likelihood.pyc</span> in <span class="ansi-cyan-fg">anomalyProbability</span><span class="ansi-blue-fg">(self, value, anomalyScore, timestamp)</span>
-<span class="ansi-green-intense-fg ansi-bold">    384</span>         _, _, self._distribution = estimateAnomalyLikelihoods(
-<span class="ansi-green-intense-fg ansi-bold">    385</span>           self<span class="ansi-blue-fg">.</span>_historicalScores<span class="ansi-blue-fg">,</span>
-<span class="ansi-green-fg">--&gt; 386</span><span class="ansi-red-fg">           skipRecords=numSkipRecords)
-</span><span class="ansi-green-intense-fg ansi-bold">    387</span> 
-<span class="ansi-green-intense-fg ansi-bold">    388</span>       likelihoods, _, self._distribution = updateAnomalyLikelihoods(
-
-<span class="ansi-green-fg">/usr/local/lib/python2.7/dist-packages/nupic/algorithms/anomaly_likelihood.pyc</span> in <span class="ansi-cyan-fg">estimateAnomalyLikelihoods</span><span class="ansi-blue-fg">(anomalyScores, averagingWindow, skipRecords, verbosity)</span>
-<span class="ansi-green-intense-fg ansi-bold">    458</span>     anomalyScores<span class="ansi-blue-fg">,</span>
-<span class="ansi-green-intense-fg ansi-bold">    459</span>     windowSize <span class="ansi-blue-fg">=</span> averagingWindow<span class="ansi-blue-fg">,</span>
-<span class="ansi-green-fg">--&gt; 460</span><span class="ansi-red-fg">     verbosity = verbosity)
-</span><span class="ansi-green-intense-fg ansi-bold">    461</span>   s <span class="ansi-blue-fg">=</span> <span class="ansi-blue-fg">[</span>r<span class="ansi-blue-fg">[</span><span class="ansi-cyan-fg">2</span><span class="ansi-blue-fg">]</span> <span class="ansi-green-fg">for</span> r <span class="ansi-green-fg">in</span> aggRecordList<span class="ansi-blue-fg">]</span>
-<span class="ansi-green-intense-fg ansi-bold">    462</span>   dataValues <span class="ansi-blue-fg">=</span> numpy<span class="ansi-blue-fg">.</span>array<span class="ansi-blue-fg">(</span>s<span class="ansi-blue-fg">)</span>
-
-<span class="ansi-green-fg">/usr/local/lib/python2.7/dist-packages/nupic/algorithms/anomaly_likelihood.pyc</span> in <span class="ansi-cyan-fg">_anomalyScoreMovingAverage</span><span class="ansi-blue-fg">(anomalyScores, windowSize, verbosity)</span>
-<span class="ansi-green-intense-fg ansi-bold">    670</span> 
-<span class="ansi-green-intense-fg ansi-bold">    671</span>     avg, historicalValues, total = (
-<span class="ansi-green-fg">--&gt; 672</span><span class="ansi-red-fg">       </span>MovingAverage<span class="ansi-blue-fg">.</span>compute<span class="ansi-blue-fg">(</span>historicalValues<span class="ansi-blue-fg">,</span> total<span class="ansi-blue-fg">,</span> record<span class="ansi-blue-fg">[</span><span class="ansi-cyan-fg">2</span><span class="ansi-blue-fg">]</span><span class="ansi-blue-fg">,</span> windowSize<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    673</span>       )
-<span class="ansi-green-intense-fg ansi-bold">    674</span> 
-
-<span class="ansi-green-fg">/usr/local/lib/python2.7/dist-packages/nupic/utils.pyc</span> in <span class="ansi-cyan-fg">compute</span><span class="ansi-blue-fg">(slidingWindow, total, newVal, windowSize)</span>
-<span class="ansi-green-intense-fg ansi-bold">     79</span> 
-<span class="ansi-green-intense-fg ansi-bold">     80</span>     slidingWindow<span class="ansi-blue-fg">.</span>append<span class="ansi-blue-fg">(</span>newVal<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-fg">---&gt; 81</span><span class="ansi-red-fg">     </span>total <span class="ansi-blue-fg">+=</span> newVal
-<span class="ansi-green-intense-fg ansi-bold">     82</span>     <span class="ansi-green-fg">return</span> float<span class="ansi-blue-fg">(</span>total<span class="ansi-blue-fg">)</span> <span class="ansi-blue-fg">/</span> len<span class="ansi-blue-fg">(</span>slidingWindow<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">,</span> slidingWindow<span class="ansi-blue-fg">,</span> total
-<span class="ansi-green-intense-fg ansi-bold">     83</span> 
-
-<span class="ansi-red-fg">TypeError</span>: unsupported operand type(s) for +=: &#39;float&#39; and &#39;NoneType&#39;</pre>
-</div>
-</div>
-
 </div>
 </div>
 

@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[119]:
+# In[88]:
 
 
 import numpy as np
@@ -15,65 +15,70 @@ def get_data(n=0,datalabels=["timestamp","consumption"]):
     """
     Generate simulated data set
     
-    Anomaly locations should be at multiples of 24 to keep phase 
+    Anomaly locations should be at multiples of 24 to keep phase constant
     
     """
     N=10000
+    Start = 8000
     A_base = 20
     dur_base = 24
-    T_week = (2*np.pi)/ 168  # weekly period in hours
-    T_day = (2*np.pi) / 24   # daily period in hours
+    f_week = (2*np.pi)/ 168  # weekly period in hours
+    f_day = (2*np.pi) / 24   # daily period in hours
     time_step = 1
-    x_range = np.arange(0,N,time_step)
-    data = (A_base/2)*np.sin(T_day*x_range) +(A_base/2)*np.sin(T_week*x_range) 
+    
+    data = np.zeros(N)
+    
+    # Base signal
+    t_xrange = np.arange(0,N,time_step)
+    data = (A_base/2)*np.sin(f_day*t_xrange) +(A_base/2)*np.sin(f_week*t_xrange)     
 
-    # Training set contains "good" data
-    Start = 8000
-
-    # Sudden amplitude shift *for both weekly and daily sines
+    # Sudden amplitude shift *for daily sine
     A = 5                             # amplitude shift
     A_loc = 8208                      # location
     A_dur = dur_base                  # anomaly duration
-    A_range = np.arange(A_loc,A_loc+A_dur) 
-    data[A_range] = (A/2)*np.sin(T_day*A_range) +(A/2)*np.sin(T_week*A_range) 
+    t_Arange = np.arange(A_loc,A_loc+A_dur) 
+    data[t_Arange] = (A/2)*np.sin(f_day*t_Arange) +(A_base/2)*np.sin(f_week*t_Arange) 
 
-    # Gradual amplitude shift *for both weekly and daily sines
+    # Gradual amplitude shift *for both daily sine
     As = 2                            # amplitude shift
     As_loc = 8472                     # location
     As_dur = dur_base*3               # anomaly duration
-    As_range = np.arange(As_loc,As_loc+As_dur,1)
+    t_Asrange = np.arange(As_loc,As_loc+As_dur,1)
     As_shift = np.linspace(A_base,A_base*As,As_dur)
-    data[As_range] = (As_shift/2)*np.sin(T_day*As_range) +(As_shift/2)*np.sin(T_week*As_range) 
+    data[t_Asrange] = (As_shift/2)*np.sin(f_day*t_Asrange) +(A_base/2)*np.sin(f_week*t_Asrange) 
 
-    # Sudden Frequency shift *for both weekly and daily sines
-    f = 12                          # frequency shift
+    # Sudden Frequency shift *for daily sine
+    f = (2*np.pi) / 5                             # frequency shift
     f_loc = 8760                      # location
     f_dur = dur_base                  # anomaly duration
-    f_range = np.arange(f_loc,f_loc+f_dur)
-    data[f_range] = (A_base/2)*np.sin(T_day*(f_range/f)) +(A_base/2)*np.sin(T_week*(f_range/f)) 
+    t_frange = np.arange(f_loc,f_loc+f_dur)
+    data[t_frange] = (A_base/2)*np.sin(f*t_frange) +(A_base/2)*np.sin(f_week*t_frange) 
 
     # Gradual frequency shift
-    fs = 10                         # frequency shift
+    fs = (2*np.pi) / 12                           # frequency shift
     fs_loc = 9000                     # location
-    fs_dur = dur_base                 # anomaly duration
-    fs_range =  np.arange(fs_loc,fs_loc+fs_dur)
-    fs_shift =  np.arange(1,fs,((fs-1)/fs_dur))
-    data[fs_range] =((A_base/2)*np.sin((T_day*(fs_range/fs_shift))) +(A_base/2)*np.sin((T_week*(fs_range))))
+    fs_dur = dur_base*3               # anomaly duration
+    t_fsrange =  np.arange(fs_loc,fs_loc+fs_dur,1)
+    fs_shift =  np.linspace(f_day,fs,fs_dur)
+    out = np.zeros(fs_dur)
+    for i in np.arange(fs_dur):
+        out[i] = t_fsrange[i] * fs_shift[i]
+    data[t_fsrange] =(A_base/2)*np.sin(out) #+(A_base/2)*np.sin(f_week*t_fsrange)
 
     # Sudden Phase Shift
     p = 0.5*np.pi
     p_loc = 9240
     p_dur = dur_base
-    p_range = np.arange(p_loc,p_loc+p_dur)
-    data[p_range] =  (A_base/2)*np.sin(T_day*p_range + p) +(A_base/2)*np.sin(T_week*p_range) 
+    t_prange = np.arange(p_loc,p_loc+p_dur)
+    data[t_prange] =  (A_base/2)*np.sin(f_day*t_prange + p) +(A_base/2)*np.sin(f_week*t_prange) 
 
     # Gradual Phase Shift
     ps = 0.5*np.pi
     ps_loc = 9480
     ps_dur = dur_base
-    ps_range = np.arange(ps_loc,ps_loc+ps_dur)
+    t_psrange = np.arange(ps_loc,ps_loc+ps_dur)
     ps_shift =  np.linspace(1,ps,ps_dur)
-    data[ps_range] = (A_base/2)*np.sin(T_day*ps_range + ps_shift) +(A_base/2)*np.sin(T_week*ps_range) 
+    data[t_psrange] = (A_base/2)*np.sin(f_day*t_psrange + ps_shift) +(A_base/2)*np.sin(f_week*t_psrange) 
 
     # Add noise
     N_s = n                   # noise magnitude percentage
@@ -147,6 +152,8 @@ def plot_anomalies(data, anomaly_loc, anomaly_dur, Start=8000, buffer = 100):
         plt.subplot(2,3,i+1)
         plt.plot(data[anomaly_loc[i]-buffer:anomaly_loc[i]+anomaly_dur[i]+buffer])
         plt.title(names[i])
+        plt.ylim([-50,50])
+        plt.xlim([0,300])
         plt.axis('off')
         
     plt.show()
@@ -155,25 +162,50 @@ data, anomaly_loc, anomaly_dur, dates = get_data(n=0,datalabels=["dttm","value"]
 #plot_data(data[8000:], anomaly_loc, anomaly_dur,title = "simulated data")
 plot_anomalies(data, anomaly_loc, anomaly_dur)
 
-plt.plot(data[8000:])
+
+
+# In[99]:
+
+
+f_week = (2*np.pi)/ 168  # weekly period in hours
+f_day = (2*np.pi) / 24   # daily period in hours
+# Gradual frequency shift
+A_base = 20
+fs = (2*np.pi) / 12                           # frequency shift
+fs_loc = 9000                     # location
+fs_dur = 24*3               # anomaly duration
+t_fsrange =  np.arange(fs_loc,fs_loc+fs_dur,1)
+fs_shift =  np.linspace(f_day,fs,fs_dur)
+out = np.zeros(fs_dur)
+for i in np.arange(fs_dur):
+    out[i] = t_fsrange[i] + fs_shift[i]
+
+plt.plot((A_base/2)*np.sin(out)) #+(A_base/2)*np.sin(f_week*t_fsrange))
 plt.show()
+#####https://stackoverflow.com/questions/26921544/drawing-sine-wave-with-increasing-amplitude-and-frequency-over-time
+
+
+# In[61]:
+
+
+(2*np.pi) / 10 
 
 
 # In[109]:
 
 
-A_base = 20
-T_week = (2*np.pi)/ 168  # weekly period in hours
-T_day = (2*np.pi) / 24   # daily period in hours
-dur_base = 24
-# Gradual frequency shift
-fs = 1.5                      # frequency shift
-fs_loc = 9000                     # location
-fs_dur = dur_base             # anomaly duration
-fs_range =  np.arange(fs_loc,fs_loc+fs_dur)
-fs_shift =  np.arange(1,fs,((fs-1)/fs_dur))
-plt.plot((A_base/2)*np.sin((T_day*(fs_range))) +(A_base/2)*np.sin((T_week*(fs_range/fs_shift))))
-plt.show()
+# A_base = 20
+# T_week = (2*np.pi)/ 168  # weekly period in hours
+# T_day = (2*np.pi) / 24   # daily period in hours
+# dur_base = 24
+# # Gradual frequency shift
+# fs = 1.5                      # frequency shift
+# fs_loc = 9000                     # location
+# fs_dur = dur_base             # anomaly duration
+# fs_range =  np.arange(fs_loc,fs_loc+fs_dur)
+# fs_shift =  np.arange(1,fs,((fs-1)/fs_dur))
+# plt.plot((A_base/2)*np.sin((T_day*(fs_range))) +(A_base/2)*np.sin((T_week*(fs_range/fs_shift))))
+# plt.show()
 
-fs_shift.shape
+# fs_shift.shape
 

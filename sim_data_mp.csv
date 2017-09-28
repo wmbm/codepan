@@ -1,5 +1,5 @@
-consumption,value
-timestamp,float
+value,value
+dttm,float
 T,
 2017-01-03 00:00:00,0.0
 2017-01-03 01:00:00,2.962

@@ -18,7 +18,10 @@ from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pylab as plt
 import SimAnomalyDataset as sim
 
+"""
+Main code of LSTM anomaly detection, including data preparation
 
+"""
 
 # transform series into train and test sets for supervised learning
 def prepare_data(series, n_test, n_lag, n_seq):
@@ -97,7 +100,7 @@ def inverse_difference(last_ob, forecast):
     return inverted
 
 # inverse data transform on forecasts
-def inverse_transform(series, forecasts, scaler, n_test):
+def inverse_transform(series, forecasts, scaler, n_test,var):
     inverted = []
     for i in range(len(forecasts)):
         # create array from forecast
@@ -108,7 +111,7 @@ def inverse_transform(series, forecasts, scaler, n_test):
         inv_scale = inv_scale[0, :]
         # invert differencing
         index = len(series) - n_test + i - 1
-        last_ob = series['mag'][index]
+        last_ob = series[var][index]
         inv_diff = inverse_difference(last_ob, inv_scale)
         # store
         inverted.append(inv_diff)
@@ -123,13 +126,15 @@ def evaluate_forecasts(test, forecasts, n_lag, n_seq):
         print('t+%d RMSE: %f' % ((i+1), rmse))
 
 # Create dataset
-#data, anomaly_loc, anomaly_dur, dates = sim.get_data(n=0.1,datalabels=["timestamp","consumption"])
+data, anomaly_loc, anomaly_dur, dates = sim.get_data(n=0,datalabels=["timestamp","consumption"])
         
 # Import dataset
-#series = read_csv('sim_data.csv', header=0, index_col=0, squeeze=True)
-series = read_csv('all_month.csv', header=0, index_col=0, squeeze=True)
-series = series.filter(['time','mag'], axis=1)
-series = series[np.isfinite(series['mag'])]
+series = read_csv('sim_data.csv', header=0, index_col=0, squeeze=True)
+#series = read_csv('all_month.csv', header=0, index_col=0, squeeze=True)
+#series = series.filter(['time','mag'], axis=1)
+#series = series[np.isfinite(series['mag'])]
+
+var = "consumption"
 
 # configure
 n_lag = 1
@@ -139,11 +144,11 @@ n_epochs = 1500
 n_batch = 1
 n_neurons = 1
 # prepare data
-scaler, train, test =  prepare_data(series['mag'], n_test, n_lag, n_seq)
+scaler, train, test =  prepare_data(series[var], n_test, n_lag, n_seq)
 # make forecasts
 forecasts = make_forecasts(train, test, n_lag, n_seq)
 # inverse transform forecasts and test
-forecasts = inverse_transform(series, forecasts, scaler, n_test+2)
+forecasts = inverse_transform(series, forecasts, scaler, n_test+2,var)
 
 
 # In[2]:
@@ -153,9 +158,12 @@ import SimAnomalyDataset as sim
 import evaluatePredictions as evalPred
 data, anomaly_loc, anomaly_dur, dates = sim.get_data()
 
-# evaluate forecasts
+"""
+Evaluate predictions based on various statistical metrics - generates prediction error scaled between 0-1
+"""
+
 actual = [row[n_lag:] for row in test]
-actual = inverse_transform(series, actual, scaler, n_test+2)
+actual = inverse_transform(series, actual, scaler, n_test+2,var)
 
 actual2=np.reshape(actual,(2000,1))
 forecasts2=np.reshape(forecasts,(2000,1))
@@ -176,24 +184,23 @@ to_plot = to_plot/np.max(to_plot)
 sim.plot_data(to_plot, anomaly_loc, anomaly_dur,title=metric)
 
 
-# In[23]:
+# In[3]:
 
 
 # Fit prediction error with Gaussian to extract anomaly score
 pred = actual2[:,0]- forecasts2[:,0]
 anomaly_score = evalPred.GaussianPredError(pred, anomaly_loc, anomaly_dur,thresh=0.05)
 
-# Threshold anomalies to binary
-thresh = 0.99
-anomaly_score[anomaly_score>thresh]=1
-anomaly_score[anomaly_score<thresh]=0
-
-plt.plot(anomaly_score)
-plt.show()
+# sim.plot_data(anomaly_score, anomaly_loc, anomaly_dur,title=metric)
+# plt.show()
 
 
-# In[24]:
+# In[4]:
 
+
+"""
+Write to NUMENTA style csv file (Also for NAB)
+"""
 
 # Convert anomaly locations to binary array
 labels = np.zeros_like(dates)
@@ -211,122 +218,81 @@ datacsv["value"] = np.round(data,3)
 datacsv["anomaly_score"] = full_anomaly_scores
 datacsv["label"] = labels
 
+## Write CSV to folder
+#datacsv.to_csv(path_or_buf="/home/codepan1/RestRunnerCode/alpha_Twitter_volume_AAPL.csv")
+#series = read_csv("/home/codepan1/RestRunnerCode/alpha_Twitter_volume_AAPL.csv")
 
-# In[25]:
 
 
-datacsv.to_csv(path_or_buf="/home/codepan1/RestRunnerCode/alpha_Twitter_volume_AAPL.csv")
+# In[5]:
+
+
+import NABimplementation as NAB
+
+labels = datacsv["label"].values
+anomaly_score = datacsv["anomaly_score"].values
+NAB.main(labels, anomaly_score)
 
 
 # In[6]:
 
 
-plt.plot(data)
+# Save NAB for various noise levels
+
+NAB_noise = []
+for n in np.arange(0,10,0.5): # percentage of base signal amplitude
+    # create dataset
+    data, anomaly_loc, anomaly_dur, dates = sim.get_data(n,datalabels=["timestamp","consumption"])
+    
+    # read csv
+    series = read_csv('sim_data.csv', header=0, index_col=0, squeeze=True)
+    
+    # run LSTM
+    var = "consumption"
+    n_lag = 1
+    n_seq = 1
+    n_test = 2000
+    n_epochs = 1500
+    n_batch = 1
+    n_neurons = 1
+    # prepare data
+    scaler, train, test =  prepare_data(series[var], n_test, n_lag, n_seq)
+    # make forecasts
+    forecasts = make_forecasts(train, test, n_lag, n_seq)
+    # inverse transform forecasts and test
+    forecasts = inverse_transform(series, forecasts, scaler, n_test+2,var)
+   
+    # reshape predictions and input
+    actual = [row[n_lag:] for row in test]
+    actual = inverse_transform(series, actual, scaler, n_test+2,var)
+    actual2=np.reshape(actual,(2000,1))
+    forecasts2=np.reshape(forecasts,(2000,1))
+    
+    # Fit prediction error with Gaussian to extract anomaly score
+    pred = actual2[:,0]- forecasts2[:,0]
+    anomaly_score = evalPred.GaussianPredError(pred, anomaly_loc, anomaly_dur,thresh=0.05)
+    
+    # Convert anomaly locations to binary array
+    labels = np.zeros_like(dates)
+    for i in anomaly_loc:
+        labels[i] = 1
+        
+    # Pad anomaly scores to zero during training
+    full_anomaly_scores = np.zeros_like(dates)
+    full_anomaly_scores[8000:] = anomaly_score
+    
+    # calculate NAB
+    NAB_noise.append(NAB.main(labels, full_anomaly_scores))
+
+
+# In[11]:
+
+
+x = np.arange(0,10,0.5)*10
+plt.plot(x, NAB_noise,'x')
+plt.xlabel("Percentage noise")
+plt.ylabel("NAB score")
+#plt.xlim([0,100])
+#plt.ylim([0,100])
 plt.show()
-
-
-# In[7]:
-
-
-# import numpy as np
-# import SimAnomalyDataset as sim
-
-
-# # Threshold anomalies to binary
-# thresh = 0.05
-# anomaly_score[anomaly_score>thresh]=1
-# anomaly_score[anomaly_score<thresh]=0
-
-# # Get anomaly locations from simulation
-# data, anomaly_loc, anomaly_dur, dates = sim.get_data(n=0)
-
-# # Defined anomaly window size
-# N_anomalies = np.count_nonzero(anomaly_score)
-# windowSize = round((len(data)*0.1)/N_anomalies) # 10% of data is window size
-# windowSize2 = round(windowSize/2)
-
-# # Store "unseen" anomalies
-# anomaly_unseen = anomaly_score
-# # Initialize empty score array
-# S=[]
-# # loop through anomaly locations
-# for loc in anomaly_loc:
-#     # define window around anomaly
-#     window = anomaly_score[loc-(windowSize2):loc+(windowSize2)]
-#     # loop through anomaly score relative positions
-#     for y in window: 
-#         # shift right edge of window to be "zero" position 
-#         y = y - len(window)
-#         # apply sigmoid function to relative position
-#         S.append(sigmoid(window[y]))
-#     # false negatives and ture positives within window
-# #     FN_window = window[window==0].sum()
-# #     TP_window = window[window==1].sum()
-    
-#     # FP are values outside of these window
-#     anomaly_unseen[loc-(windowSize2):loc+(windowSize2)] = 0
-    
-# # Sum raw scores
-# A_FP = -.1
-# S = np.sum(S) + np.sum(anomaly_unseen)*A_FP
-
-
-# # Normalization
-# Sperfect = 150
-# Snull = 0 
-# Snorm = 100*((S-Snull)/(Sperfect-Snull))
-
-# Snorm
-
-
-# In[8]:
-
-
-# # Sigmoid score function
-# def sigmoid(y):
-#     return(2*(1/(1+np.exp(5*y)))-1)
-
-# plt.plot(sigmoid(np.arange(-3,3,1)))
-# plt.show()
-
-
-# In[9]:
-
-
-# # Get anomaly locations from simulation
-# data, anomaly_loc, anomaly_dur, dates = sim.get_data(n="n")
-
-# # Defined anomaly window size
-# N_anomalies = 10
-# windowSize = (len(data)*0.1)/N_anomalies # 10% of data is window size
-
-# threshold = 20
-# anomalies = data
-# anomalies[anomalies<data]=0
-# # Loop through prediction indicies
-# for idx in np.arange(len(data)):
-#     if anomalies[idx] > 0 :
-#         anomalies[idx-windowSize/2:idx+windowSize/2]
-
-# # Sigmoid score function
-# def sigmoid(y, Atp= 1, Afp= -1):
-#     return((Atp-Afp)*(1/(1+np.exp(5*y)))-1)
-
-# # Raw score 
-# def raw_score(sig,Afn, fd):
-#     return np.sum(sig) + Afn*fd
-
-# # Sum raw scores
-# S = np.sum(raw_score(sigmoid))
-
-# # Normalization
-# Sperfect = 1
-# Snull = 0 
-# Snorm = 100*((S-Snull)/(Sperfect-Snull))
-
-
-# In[ ]:
-
-
-
 
