@@ -234,13 +234,13 @@ anomaly_score = datacsv["anomaly_score"].values
 NAB.main(labels, anomaly_score)
 
 
-# In[6]:
+# In[40]:
 
 
 # Save NAB for various noise levels
 
 NAB_noise = []
-for n in np.arange(0,10,0.5): # percentage of base signal amplitude
+for n in np.linspace(0,0.5,10): # percentage of base signal amplitude
     # create dataset
     data, anomaly_loc, anomaly_dur, dates = sim.get_data(n,datalabels=["timestamp","consumption"])
     
@@ -285,14 +285,20 @@ for n in np.arange(0,10,0.5): # percentage of base signal amplitude
     NAB_noise.append(NAB.main(labels, full_anomaly_scores))
 
 
-# In[11]:
+# In[44]:
 
 
-x = np.arange(0,10,0.5)*10
+x = np.linspace(0,0.5,10)*100
 plt.plot(x, NAB_noise,'x')
 plt.xlabel("Percentage noise")
 plt.ylabel("NAB score")
-#plt.xlim([0,100])
-#plt.ylim([0,100])
+#plt.xlim([0,25])
+#plt.ylim([-1,100])
 plt.show()
+
+
+# In[34]:
+
+
+
 

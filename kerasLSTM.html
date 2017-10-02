@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8" />
-<title>SimAnomalyDataset</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>kerasLSTM</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 
 <style type="text/css">
@@ -11773,204 +11773,267 @@ div#notebook {
 
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="prompt input_prompt">In&nbsp;[1]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">pandas</span> <span class="k">import</span> <span class="n">read_csv</span>
+<span class="kn">from</span> <span class="nn">pandas</span> <span class="k">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="k">import</span> <span class="n">pyplot</span>
+<span class="kn">from</span> <span class="nn">pandas</span> <span class="k">import</span> <span class="n">DataFrame</span>
+<span class="kn">from</span> <span class="nn">pandas</span> <span class="k">import</span> <span class="n">Series</span>
+<span class="kn">from</span> <span class="nn">pandas</span> <span class="k">import</span> <span class="n">concat</span>
+<span class="kn">from</span> <span class="nn">pandas</span> <span class="k">import</span> <span class="n">read_csv</span>
+<span class="kn">from</span> <span class="nn">pandas</span> <span class="k">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="k">import</span> <span class="n">mean_squared_error</span>
+<span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="k">import</span> <span class="n">MinMaxScaler</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pylab</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span>
-<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">timedelta</span> 
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">SimAnomalyDataset</span> <span class="k">as</span> <span class="nn">sim</span>
+<span class="kn">import</span> <span class="nn">evaluatePredictionError</span> <span class="k">as</span> <span class="nn">evalPred</span>
 
-<span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">datalabels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span><span class="s2">&quot;consumption&quot;</span><span class="p">]):</span>
-    
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Main code of LSTM anomaly detection, including data preparation</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># transform series into train and test sets for supervised learning</span>
+<span class="k">def</span> <span class="nf">prepare_data</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">n_test</span><span class="p">,</span> <span class="n">n_lag</span><span class="p">,</span> <span class="n">n_seq</span><span class="p">):</span>
+    <span class="c1"># extract raw values</span>
+    <span class="n">raw_values</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">values</span>
+    <span class="c1"># transform data to be stationary</span>
+    <span class="n">diff_series</span> <span class="o">=</span> <span class="n">difference</span><span class="p">(</span><span class="n">raw_values</span><span class="p">)</span>
+    <span class="n">diff_values</span> <span class="o">=</span> <span class="n">diff_series</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">diff_values</span> <span class="o">=</span> <span class="n">diff_values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">diff_values</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># rescale values to -1, 1</span>
+    <span class="n">scaler</span> <span class="o">=</span> <span class="n">MinMaxScaler</span><span class="p">(</span><span class="n">feature_range</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">scaled_values</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">diff_values</span><span class="p">)</span>
+    <span class="n">scaled_values</span> <span class="o">=</span> <span class="n">scaled_values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">scaled_values</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># transform into supervised learning problem X, y</span>
+    <span class="n">supervised</span> <span class="o">=</span> <span class="n">series_to_supervised</span><span class="p">(</span><span class="n">scaled_values</span><span class="p">,</span> <span class="n">n_lag</span><span class="p">,</span> <span class="n">n_seq</span><span class="p">)</span>
+    <span class="n">supervised_values</span> <span class="o">=</span> <span class="n">supervised</span><span class="o">.</span><span class="n">values</span>
+    <span class="c1"># split into train and test sets</span>
+    <span class="n">train</span><span class="p">,</span> <span class="n">test</span> <span class="o">=</span> <span class="n">supervised_values</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="n">n_test</span><span class="p">],</span> <span class="n">supervised_values</span><span class="p">[</span><span class="o">-</span><span class="n">n_test</span><span class="p">:]</span>
+    <span class="k">return</span> <span class="n">scaler</span><span class="p">,</span> <span class="n">train</span><span class="p">,</span> <span class="n">test</span>
+
+<span class="c1"># create a differenced series</span>
+<span class="k">def</span> <span class="nf">difference</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">interval</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">dataset</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="n">interval</span><span class="p">]</span>
+        <span class="n">diff</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Series</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span>
+
+<span class="c1"># convert time series into supervised learning problem</span>
+<span class="k">def</span> <span class="nf">series_to_supervised</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">n_in</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_out</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dropnan</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">n_vars</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span> <span class="k">else</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">cols</span><span class="p">,</span> <span class="n">names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(),</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="c1"># input sequence (t-n, ... t-1)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_in</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">cols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+        <span class="n">names</span> <span class="o">+=</span> <span class="p">[(</span><span class="s1">&#39;var</span><span class="si">%d</span><span class="s1">(t-</span><span class="si">%d</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_vars</span><span class="p">)]</span>
+    <span class="c1"># forecast sequence (t, t+1, ... t+n)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_out</span><span class="p">):</span>
+        <span class="n">cols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="o">-</span><span class="n">i</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">names</span> <span class="o">+=</span> <span class="p">[(</span><span class="s1">&#39;var</span><span class="si">%d</span><span class="s1">(t)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_vars</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">names</span> <span class="o">+=</span> <span class="p">[(</span><span class="s1">&#39;var</span><span class="si">%d</span><span class="s1">(t+</span><span class="si">%d</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_vars</span><span class="p">)]</span>
+    <span class="c1"># put it all together</span>
+    <span class="n">agg</span> <span class="o">=</span> <span class="n">concat</span><span class="p">(</span><span class="n">cols</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">agg</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">names</span>
+    <span class="c1"># drop rows with NaN values</span>
+    <span class="k">if</span> <span class="n">dropnan</span><span class="p">:</span>
+        <span class="n">agg</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">agg</span>
+
+<span class="c1"># make a persistence forecast</span>
+<span class="k">def</span> <span class="nf">persistence</span><span class="p">(</span><span class="n">last_ob</span><span class="p">,</span> <span class="n">n_seq</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">last_ob</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_seq</span><span class="p">)]</span>
+ 
+<span class="c1"># evaluate the persistence model</span>
+<span class="k">def</span> <span class="nf">make_forecasts</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">n_lag</span><span class="p">,</span> <span class="n">n_seq</span><span class="p">):</span>
+    <span class="n">forecasts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">test</span><span class="p">)):</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">test</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="n">n_lag</span><span class="p">],</span> <span class="n">test</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">n_lag</span><span class="p">:]</span>
+        <span class="c1"># make forecast</span>
+        <span class="n">forecast</span> <span class="o">=</span> <span class="n">persistence</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">n_seq</span><span class="p">)</span>
+        <span class="c1"># store the forecast</span>
+        <span class="n">forecasts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">forecast</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">forecasts</span>
+
+<span class="c1"># invert differenced forecast</span>
+<span class="k">def</span> <span class="nf">inverse_difference</span><span class="p">(</span><span class="n">last_ob</span><span class="p">,</span> <span class="n">forecast</span><span class="p">):</span>
+    <span class="c1"># invert first forecast</span>
+    <span class="n">inverted</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">inverted</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">forecast</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">last_ob</span><span class="p">)</span>
+    <span class="c1"># propagate difference forecast using inverted first value</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">forecast</span><span class="p">)):</span>
+        <span class="n">inverted</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">forecast</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">inverted</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">inverted</span>
+
+<span class="c1"># inverse data transform on forecasts</span>
+<span class="k">def</span> <span class="nf">inverse_transform</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">forecasts</span><span class="p">,</span> <span class="n">scaler</span><span class="p">,</span> <span class="n">n_test</span><span class="p">):</span>
+    <span class="n">inverted</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">forecasts</span><span class="p">)):</span>
+        <span class="c1"># create array from forecast</span>
+        <span class="n">forecast</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">forecasts</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">forecast</span> <span class="o">=</span> <span class="n">forecast</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">forecast</span><span class="p">))</span>
+        <span class="c1"># invert scaling</span>
+        <span class="n">inv_scale</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">inverse_transform</span><span class="p">(</span><span class="n">forecast</span><span class="p">)</span>
+        <span class="n">inv_scale</span> <span class="o">=</span> <span class="n">inv_scale</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="c1"># invert differencing</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">series</span><span class="p">)</span> <span class="o">-</span> <span class="n">n_test</span> <span class="o">+</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">last_ob</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="n">inv_diff</span> <span class="o">=</span> <span class="n">inverse_difference</span><span class="p">(</span><span class="n">last_ob</span><span class="p">,</span> <span class="n">inv_scale</span><span class="p">)</span>
+        <span class="c1"># store</span>
+        <span class="n">inverted</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">inv_diff</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">inverted</span>
+
+<span class="c1"># evaluate the RMSE for each forecast time step</span>
+<span class="k">def</span> <span class="nf">evaluate_forecasts</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">forecasts</span><span class="p">,</span> <span class="n">n_lag</span><span class="p">,</span> <span class="n">n_seq</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_seq</span><span class="p">):</span>
+        <span class="n">actual</span> <span class="o">=</span> <span class="n">test</span><span class="p">[(</span><span class="n">n_lag</span><span class="o">+</span><span class="n">i</span><span class="p">)]</span>
+        <span class="n">predicted</span> <span class="o">=</span> <span class="p">[</span><span class="n">forecast</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">forecast</span> <span class="ow">in</span> <span class="n">forecasts</span><span class="p">]</span>
+        <span class="n">rmse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mean_squared_error</span><span class="p">(</span><span class="n">actual</span><span class="p">,</span> <span class="n">predicted</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;t+</span><span class="si">%d</span><span class="s1"> RMSE: </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">((</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">rmse</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">raw_data</span><span class="p">,</span><span class="n">n_lag</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span><span class="n">n_seq</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span><span class="n">n_test</span> <span class="o">=</span> <span class="mi">2000</span><span class="p">,</span><span class="n">n_epochs</span> <span class="o">=</span> <span class="mi">1500</span><span class="p">,</span> <span class="n">n_batch</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_neurons</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span><span class="n">sim</span><span class="o">=</span><span class="s2">&quot;n&quot;</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Generate simulated data set</span>
+<span class="sd">    LSTM-AD - Long-Short term memory anomaly detection algorithm</span>
 <span class="sd">    </span>
-<span class="sd">    Anomaly locations should be at multiples of 24 to keep phase constant</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n_lag :   comparison step into the past</span>
+<span class="sd">    n_seq : prediction step into the future</span>
+<span class="sd">    n_test : length of test series</span>
+<span class="sd">    n_epochs : number of epochs</span>
+<span class="sd">    n_batch : batch size (1 for time series datasets)</span>
+<span class="sd">    n_neurons : number of neurons in networks</span>
+<span class="sd">    sim : is this being run on simulated dataset with known anomalies?</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    ----------</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># prepare data</span>
+    <span class="n">scaler</span><span class="p">,</span> <span class="n">train</span><span class="p">,</span> <span class="n">test</span> <span class="o">=</span>  <span class="n">prepare_data</span><span class="p">(</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">n_test</span><span class="p">,</span> <span class="n">n_lag</span><span class="p">,</span> <span class="n">n_seq</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;data prepared....&quot;</span><span class="p">)</span>
+    <span class="c1"># make forecasts</span>
+    <span class="n">forecasts</span> <span class="o">=</span> <span class="n">make_forecasts</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">n_lag</span><span class="p">,</span> <span class="n">n_seq</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;forecasts made....&quot;</span><span class="p">)</span>
+    <span class="c1"># inverse transform forecasts and test</span>
+    <span class="n">forecasts</span> <span class="o">=</span> <span class="n">inverse_transform</span><span class="p">(</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">forecasts</span><span class="p">,</span> <span class="n">scaler</span><span class="p">,</span> <span class="n">n_test</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;forecasts inversed....&quot;</span><span class="p">)</span>
+        
+    <span class="c1">#Evaluate predictions - scaled between 0-1</span>
+    <span class="n">actual</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="n">n_lag</span><span class="p">:]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">test</span><span class="p">]</span>
+    <span class="n">actual</span> <span class="o">=</span> <span class="n">inverse_transform</span><span class="p">(</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">actual</span><span class="p">,</span> <span class="n">scaler</span><span class="p">,</span> <span class="n">n_test</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">actual2</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">actual</span><span class="p">,(</span><span class="n">n_test</span><span class="p">,</span><span class="n">n_seq</span><span class="p">))</span>
+    <span class="n">forecasts2</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">forecasts</span><span class="p">,(</span><span class="n">n_test</span><span class="p">,</span><span class="n">n_seq</span><span class="p">))</span>
+
+    <span class="c1"># Compute comparison metric for predicted vs input (anomalies) [PICK CHANNEL] ######METHOD 1</span>
+    <span class="n">metric</span> <span class="o">=</span> <span class="s2">&quot;RMSE&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">evalPred</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">actual2</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">forecasts2</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">metric</span><span class="o">=</span><span class="n">metric</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;predictions evaluated....&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Fit prediction error with Gaussian to extract anomaly score ####### METHOD 2</span>
+    <span class="c1">#pred = actual2[:,0]- forecasts2[:,0]</span>
+    <span class="c1">#anomaly_score = evalPred.GaussianPredError(pred ,thresh=0.05)  </span>
+    <span class="c1">#print(&quot;anomaly score generated....&quot;)</span>
+    
+    <span class="k">return</span> <span class="n">out</span><span class="p">,</span> <span class="n">forecasts2</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#     #Threshold metric before plotting</span>
+<span class="c1">#     thresh_min = 0</span>
+<span class="c1">#     thresh_max = 10000</span>
+<span class="c1">#     to_plot = out</span>
+<span class="c1">#     to_plot=np.asarray(to_plot)</span>
+<span class="c1">#     to_plot[to_plot&lt;thresh_min]=0</span>
+<span class="c1">#     to_plot[to_plot&gt;thresh_max]=thresh_max</span>
+<span class="c1">#     to_plot = to_plot/np.max(to_plot)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[40]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Save NAB for various noise levels</span>
+
+<span class="k">def</span> <span class="nf">LSTM_noise</span><span class="p">(</span><span class="n">max_noise</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">steps</span> <span class="o">=</span> <span class="mi">10</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Model LSTM with varying simulated noise levels and plot output of detector score against time</span>
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">N</span><span class="o">=</span><span class="mi">10000</span>
-    <span class="n">Start</span> <span class="o">=</span> <span class="mi">8000</span>
-    <span class="n">A_base</span> <span class="o">=</span> <span class="mi">20</span>
-    <span class="n">dur_base</span> <span class="o">=</span> <span class="mi">24</span>
-    <span class="n">f_week</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">/</span> <span class="mi">168</span>  <span class="c1"># weekly period in hours</span>
-    <span class="n">f_day</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">/</span> <span class="mi">24</span>   <span class="c1"># daily period in hours</span>
-    <span class="n">time_step</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">NAB_noise</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">max_noise</span><span class="p">,</span><span class="n">steps</span><span class="p">):</span> <span class="c1"># percentage of base signal amplitude</span>
+        <span class="c1"># create dataset</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">anomaly_loc</span><span class="p">,</span> <span class="n">anomaly_dur</span><span class="p">,</span> <span class="n">dates</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">datalabels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span><span class="s2">&quot;consumption&quot;</span><span class="p">])</span>
+
+        <span class="c1"># read csv</span>
+        <span class="n">series</span> <span class="o">=</span> <span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;sim_data.csv&#39;</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">squeeze</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># run LSTM</span>
+        <span class="n">var</span> <span class="o">=</span> <span class="s2">&quot;consumption&quot;</span>
+        <span class="n">n_lag</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">n_seq</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">n_test</span> <span class="o">=</span> <span class="mi">2000</span>
+        <span class="n">n_epochs</span> <span class="o">=</span> <span class="mi">1500</span>
+        <span class="n">n_batch</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">n_neurons</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="c1"># prepare data</span>
+        <span class="n">scaler</span><span class="p">,</span> <span class="n">train</span><span class="p">,</span> <span class="n">test</span> <span class="o">=</span>  <span class="n">prepare_data</span><span class="p">(</span><span class="n">series</span><span class="p">[</span><span class="n">var</span><span class="p">],</span> <span class="n">n_test</span><span class="p">,</span> <span class="n">n_lag</span><span class="p">,</span> <span class="n">n_seq</span><span class="p">)</span>
+        <span class="c1"># make forecasts</span>
+        <span class="n">forecasts</span> <span class="o">=</span> <span class="n">make_forecasts</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">n_lag</span><span class="p">,</span> <span class="n">n_seq</span><span class="p">)</span>
+        <span class="c1"># inverse transform forecasts and test</span>
+        <span class="n">forecasts</span> <span class="o">=</span> <span class="n">inverse_transform</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">forecasts</span><span class="p">,</span> <span class="n">scaler</span><span class="p">,</span> <span class="n">n_test</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span><span class="n">var</span><span class="p">)</span>
+
+        <span class="c1"># reshape predictions and input</span>
+        <span class="n">actual</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="n">n_lag</span><span class="p">:]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">test</span><span class="p">]</span>
+        <span class="n">actual</span> <span class="o">=</span> <span class="n">inverse_transform</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">actual</span><span class="p">,</span> <span class="n">scaler</span><span class="p">,</span> <span class="n">n_test</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span><span class="n">var</span><span class="p">)</span>
+        <span class="n">actual2</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">actual</span><span class="p">,(</span><span class="mi">2000</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">forecasts2</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">forecasts</span><span class="p">,(</span><span class="mi">2000</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="c1"># Fit prediction error with Gaussian to extract anomaly score</span>
+        <span class="n">pred</span> <span class="o">=</span> <span class="n">actual2</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span> <span class="n">forecasts2</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">anomaly_score</span> <span class="o">=</span> <span class="n">evalPred</span><span class="o">.</span><span class="n">GaussianPredError</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">anomaly_loc</span><span class="p">,</span> <span class="n">anomaly_dur</span><span class="p">,</span><span class="n">thresh</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+
+        <span class="c1"># Convert anomaly locations to binary array</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">anomaly_loc</span><span class="p">:</span>
+            <span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c1"># Pad anomaly scores to zero during training</span>
+        <span class="n">full_anomaly_scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">full_anomaly_scores</span><span class="p">[</span><span class="mi">8000</span><span class="p">:]</span> <span class="o">=</span> <span class="n">anomaly_score</span>
+
+        <span class="c1"># calculate NAB</span>
+        <span class="n">NAB_noise</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">NAB</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">full_anomaly_scores</span><span class="p">))</span>
     
-    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
-    
-    <span class="c1"># Base signal</span>
-    <span class="n">t_xrange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">N</span><span class="p">,</span><span class="n">time_step</span><span class="p">)</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">A_base</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">f_day</span><span class="o">*</span><span class="n">t_xrange</span><span class="p">)</span> <span class="o">+</span><span class="p">(</span><span class="n">A_base</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">f_week</span><span class="o">*</span><span class="n">t_xrange</span><span class="p">)</span>     
-
-    <span class="c1"># Sudden amplitude shift *for daily sine</span>
-    <span class="n">A</span> <span class="o">=</span> <span class="mi">5</span>                             <span class="c1"># amplitude shift</span>
-    <span class="n">A_loc</span> <span class="o">=</span> <span class="mi">8208</span>                      <span class="c1"># location</span>
-    <span class="n">A_dur</span> <span class="o">=</span> <span class="n">dur_base</span>                  <span class="c1"># anomaly duration</span>
-    <span class="n">t_Arange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">A_loc</span><span class="p">,</span><span class="n">A_loc</span><span class="o">+</span><span class="n">A_dur</span><span class="p">)</span> 
-    <span class="n">data</span><span class="p">[</span><span class="n">t_Arange</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">A</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">f_day</span><span class="o">*</span><span class="n">t_Arange</span><span class="p">)</span> <span class="o">+</span><span class="p">(</span><span class="n">A_base</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">f_week</span><span class="o">*</span><span class="n">t_Arange</span><span class="p">)</span> 
-
-    <span class="c1"># Gradual amplitude shift *for both daily sine</span>
-    <span class="n">As</span> <span class="o">=</span> <span class="mi">2</span>                            <span class="c1"># amplitude shift</span>
-    <span class="n">As_loc</span> <span class="o">=</span> <span class="mi">8472</span>                     <span class="c1"># location</span>
-    <span class="n">As_dur</span> <span class="o">=</span> <span class="n">dur_base</span><span class="o">*</span><span class="mi">3</span>               <span class="c1"># anomaly duration</span>
-    <span class="n">t_Asrange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">As_loc</span><span class="p">,</span><span class="n">As_loc</span><span class="o">+</span><span class="n">As_dur</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">As_shift</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">A_base</span><span class="p">,</span><span class="n">A_base</span><span class="o">*</span><span class="n">As</span><span class="p">,</span><span class="n">As_dur</span><span class="p">)</span>
-    <span class="n">data</span><span class="p">[</span><span class="n">t_Asrange</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">As_shift</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">f_day</span><span class="o">*</span><span class="n">t_Asrange</span><span class="p">)</span> <span class="o">+</span><span class="p">(</span><span class="n">A_base</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">f_week</span><span class="o">*</span><span class="n">t_Asrange</span><span class="p">)</span> 
-
-    <span class="c1"># Sudden Frequency shift *for daily sine</span>
-    <span class="n">f</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">/</span> <span class="mi">5</span>                             <span class="c1"># frequency shift</span>
-    <span class="n">f_loc</span> <span class="o">=</span> <span class="mi">8760</span>                      <span class="c1"># location</span>
-    <span class="n">f_dur</span> <span class="o">=</span> <span class="n">dur_base</span>                  <span class="c1"># anomaly duration</span>
-    <span class="n">t_frange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">f_loc</span><span class="p">,</span><span class="n">f_loc</span><span class="o">+</span><span class="n">f_dur</span><span class="p">)</span>
-    <span class="n">data</span><span class="p">[</span><span class="n">t_frange</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">A_base</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">f</span><span class="o">*</span><span class="n">t_frange</span><span class="p">)</span> <span class="o">+</span><span class="p">(</span><span class="n">A_base</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">f_week</span><span class="o">*</span><span class="n">t_frange</span><span class="p">)</span> 
-
-    <span class="c1"># Gradual frequency shift</span>
-    <span class="n">fs</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">12</span>                           <span class="c1"># frequency shift</span>
-    <span class="n">fs_loc</span> <span class="o">=</span> <span class="mi">9000</span>                     <span class="c1"># location</span>
-    <span class="n">fs_dur</span> <span class="o">=</span> <span class="n">dur_base</span><span class="o">*</span><span class="mi">3</span>               <span class="c1"># anomaly duration</span>
-    <span class="n">t_fsrange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">fs_loc</span><span class="p">,</span><span class="n">fs_loc</span><span class="o">+</span><span class="n">fs_dur</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">fs_shift</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">f_day</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">),</span><span class="n">fs</span><span class="p">,</span><span class="n">fs_dur</span><span class="p">)</span>
-    <span class="n">data</span><span class="p">[</span><span class="n">t_fsrange</span><span class="p">]</span> <span class="o">=</span><span class="p">(</span><span class="n">A_base</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="p">(</span><span class="n">t_fsrange</span> <span class="o">+</span> <span class="n">f_day</span><span class="p">)</span><span class="o">*</span><span class="n">t_fsrange</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">A_base</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">f_week</span><span class="o">*</span><span class="n">t_fsrange</span><span class="p">)</span>
-
-    <span class="c1"># Sudden Phase Shift</span>
-    <span class="n">p</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
-    <span class="n">p_loc</span> <span class="o">=</span> <span class="mi">9240</span>
-    <span class="n">p_dur</span> <span class="o">=</span> <span class="n">dur_base</span>
-    <span class="n">t_prange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">p_loc</span><span class="p">,</span><span class="n">p_loc</span><span class="o">+</span><span class="n">p_dur</span><span class="p">)</span>
-    <span class="n">data</span><span class="p">[</span><span class="n">t_prange</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">A_base</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">f_day</span><span class="o">*</span><span class="n">t_prange</span> <span class="o">+</span> <span class="n">p</span><span class="p">)</span> <span class="o">+</span><span class="p">(</span><span class="n">A_base</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">f_week</span><span class="o">*</span><span class="n">t_prange</span><span class="p">)</span> 
-
-    <span class="c1"># Gradual Phase Shift</span>
-    <span class="n">ps</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
-    <span class="n">ps_loc</span> <span class="o">=</span> <span class="mi">9480</span>
-    <span class="n">ps_dur</span> <span class="o">=</span> <span class="n">dur_base</span>
-    <span class="n">t_psrange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">ps_loc</span><span class="p">,</span><span class="n">ps_loc</span><span class="o">+</span><span class="n">ps_dur</span><span class="p">)</span>
-    <span class="n">ps_shift</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">ps</span><span class="p">,</span><span class="n">ps_dur</span><span class="p">)</span>
-    <span class="n">data</span><span class="p">[</span><span class="n">t_psrange</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">A_base</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">f_day</span><span class="o">*</span><span class="n">t_psrange</span> <span class="o">+</span> <span class="n">ps_shift</span><span class="p">)</span> <span class="o">+</span><span class="p">(</span><span class="n">A_base</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">f_week</span><span class="o">*</span><span class="n">t_psrange</span><span class="p">)</span> 
-
-    <span class="c1"># Add noise</span>
-    <span class="n">N_s</span> <span class="o">=</span> <span class="n">n</span>                   <span class="c1"># noise magnitude percentage</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">N_s</span><span class="o">*</span><span class="n">A_base</span><span class="p">,</span><span class="n">N</span><span class="p">)</span>
-
-    <span class="c1"># Missing data</span>
-    <span class="n">M_loc</span> <span class="o">=</span> <span class="mi">9800</span>                        <span class="c1"># location</span>
-    <span class="n">M_dur</span> <span class="o">=</span> <span class="n">dur_base</span>                    <span class="c1"># anomaly duration</span>
-    <span class="n">data</span><span class="p">[</span><span class="n">M_loc</span><span class="p">:</span><span class="n">M_loc</span><span class="o">+</span><span class="n">M_dur</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-
-    <span class="c1"># Convert data indicies into hours &#39;%m/%d/%y %H:%M&#39;</span>
-    <span class="n">data_start</span> <span class="o">=</span> <span class="s2">&quot;01/03/2017 00:00&quot;</span>
-    <span class="n">dates</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">hour</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
-        <span class="n">dates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">data_start</span><span class="p">,</span> <span class="s1">&#39;%m/</span><span class="si">%d</span><span class="s1">/%Y %H:%M&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="n">hour</span><span class="p">))</span> 
-    
-    <span class="c1"># Output the anomaly locations and durations (for plotting later)</span>
-    <span class="n">anomaly_loc</span> <span class="o">=</span> <span class="p">[</span><span class="n">A_loc</span><span class="p">,</span> <span class="n">As_loc</span><span class="p">,</span> <span class="n">f_loc</span><span class="p">,</span> <span class="n">fs_loc</span><span class="p">,</span> <span class="n">p_loc</span><span class="p">,</span> <span class="n">ps_loc</span><span class="p">,</span> <span class="n">M_loc</span><span class="p">]</span>
-    <span class="n">anomaly_dur</span> <span class="o">=</span> <span class="p">[</span><span class="n">A_dur</span><span class="p">,</span> <span class="n">As_dur</span><span class="p">,</span> <span class="n">f_dur</span><span class="p">,</span> <span class="n">fs_dur</span><span class="p">,</span> <span class="n">p_dur</span><span class="p">,</span> <span class="n">ps_dur</span><span class="p">,</span> <span class="n">M_dur</span><span class="p">]</span>
-    
-    <span class="c1"># Limit data to 3 decimal places</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
-    
-    <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">anomaly_loc</span><span class="p">,</span> <span class="n">anomaly_dur</span><span class="p">,</span> <span class="n">dates</span>
-
-
-<span class="k">def</span> <span class="nf">plot_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">anomaly_loc</span><span class="p">,</span> <span class="n">anomaly_dur</span><span class="p">,</span><span class="n">title</span><span class="p">,</span> <span class="n">Start</span><span class="o">=</span><span class="mi">8000</span><span class="p">):</span>
-    
-    <span class="c1"># Arrays for plotting</span>
-    <span class="n">anomaly_range</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">anomaly_loc</span><span class="p">)):</span>
-        <span class="n">anomaly_range</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">anomaly_loc</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="n">anomaly_loc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="n">anomaly_dur</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
-
-    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;Data&#39;</span><span class="p">,</span><span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span> <span class="p">,</span><span class="n">s</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;Normal&#39;</span> <span class="p">,</span><span class="n">zorder</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-
-    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">anomaly_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span><span class="n">Start</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">anomaly_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="n">s</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;Sudden Amplitude shift&#39;</span> <span class="p">,</span><span class="n">zorder</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">anomaly_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span><span class="n">Start</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">anomaly_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span><span class="n">s</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;Gradual Amplitude shift&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">anomaly_range</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span><span class="n">Start</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">anomaly_range</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span><span class="n">s</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;Sudden Frequency shift&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">anomaly_range</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span><span class="n">Start</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">anomaly_range</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span><span class="n">s</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;Gradual Frequency shift&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">anomaly_range</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">-</span><span class="n">Start</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">anomaly_range</span><span class="p">[</span><span class="mi">4</span><span class="p">]),</span><span class="n">s</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;Sudden Phase shift&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">anomaly_range</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">-</span><span class="n">Start</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">anomaly_range</span><span class="p">[</span><span class="mi">5</span><span class="p">]),</span><span class="n">s</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;Gradual Phase Shift&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">anomaly_range</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">-</span><span class="n">Start</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">anomaly_range</span><span class="p">[</span><span class="mi">6</span><span class="p">]),</span><span class="n">s</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;Missing data&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-
-    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">1.05</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">loc</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">borderaxespad</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Time axis&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Amplitude axis&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span><span class="o">*</span><span class="mi">100</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">NAB_noise</span><span class="p">,</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Percentage noise&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;NAB score&quot;</span><span class="p">)</span>
+    <span class="c1">#plt.xlim([0,25])</span>
+    <span class="c1">#plt.ylim([-1,100])</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-    
-<span class="k">def</span> <span class="nf">plot_anomalies</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">anomaly_loc</span><span class="p">,</span> <span class="n">anomaly_dur</span><span class="p">,</span> <span class="n">Start</span><span class="o">=</span><span class="mi">8000</span><span class="p">,</span> <span class="n">buffer</span> <span class="o">=</span> <span class="mi">100</span><span class="p">):</span>
-    
-    
-    <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Sudden Amplitude&#39;</span><span class="p">,</span><span class="s1">&#39;Gradual Amplitude&#39;</span><span class="p">,</span><span class="s1">&#39;Sudden Frequency&#39;</span><span class="p">,</span><span class="s1">&#39;Gradual Frequency&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;Sudden Phase&#39;</span><span class="p">,</span> <span class="s1">&#39;Gradual Phase&#39;</span><span class="p">]</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">anomaly_loc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-</span><span class="n">buffer</span><span class="p">:</span><span class="n">anomaly_loc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="n">anomaly_dur</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="n">buffer</span><span class="p">])</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">names</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="o">-</span><span class="mi">50</span><span class="p">,</span><span class="mi">50</span><span class="p">])</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">300</span><span class="p">])</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
-        
-    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-    
-<span class="c1">#data, anomaly_loc, anomaly_dur, dates = get_data(n=0,datalabels=[&quot;dttm&quot;,&quot;value&quot;])</span>
-<span class="c1">#plot_data(data[8000:], anomaly_loc, anomaly_dur,title = &quot;simulated data&quot;)</span>
-<span class="c1">#plot_anomalies(data, anomaly_loc, anomaly_dur)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># plt.cla</span>
-<span class="c1"># f_week = (2*np.pi)/ 168  # weekly period in hours</span>
-<span class="c1"># f_day = (2*np.pi) / 24 </span>
-<span class="c1"># A_base = 20</span>
-<span class="c1"># dur_base = 24</span>
-<span class="c1"># # Gradual frequency shift</span>
-<span class="c1"># fs = 1 / 12                           # frequency shift</span>
-<span class="c1"># fs_loc = 9000                     # location</span>
-<span class="c1"># fs_dur = dur_base*3               # anomaly duration</span>
-<span class="c1"># t_fsrange = np.linspace(fs_loc,fs_loc+fs_dur,fs_dur)</span>
-<span class="c1"># fs_shift = np.linspace(f_day/(2*np.pi),fs,fs_dur)</span>
-<span class="c1"># t = np.linspace(0,1,fs_dur)</span>
-
-<span class="c1"># plt.plot((A_base/2)*np.sin(2*np.pi*(t_fsrange + fs_shift)*t_fsrange))# + (A_base/2)*np.sin(f_week*t_fsrange))</span>
-<span class="c1"># plt.show()</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># A_base = 20</span>
-<span class="c1"># T_week = (2*np.pi)/ 168  # weekly period in hours</span>
-<span class="c1"># T_day = (2*np.pi) / 24   # daily period in hours</span>
-<span class="c1"># dur_base = 24</span>
-<span class="c1"># # Gradual frequency shift</span>
-<span class="c1"># fs = 1.5                      # frequency shift</span>
-<span class="c1"># fs_loc = 9000                     # location</span>
-<span class="c1"># fs_dur = dur_base             # anomaly duration</span>
-<span class="c1"># fs_range =  np.arange(fs_loc,fs_loc+fs_dur)</span>
-<span class="c1"># fs_shift =  np.arange(1,fs,((fs-1)/fs_dur))</span>
-<span class="c1"># plt.plot((A_base/2)*np.sin((T_day*(fs_range))) +(A_base/2)*np.sin((T_week*(fs_range/fs_shift))))</span>
-<span class="c1"># plt.show()</span>
-
-<span class="c1"># fs_shift.shape</span>
 </pre></div>
 
 </div>

@@ -8,7 +8,8 @@ import numpy as np
 import scipy
 
 """
-Functions for computing whether or not predictions are anomalies or not
+Functions for computing whether or not predictions are anomalies or not as if the output 
+were similar to that of HTM
 """
 
 def prediction_error(predicted, expected):

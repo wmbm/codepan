@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[88]:
+# In[ ]:
 
 
 import numpy as np
@@ -55,22 +55,19 @@ def get_data(n=0,datalabels=["timestamp","consumption"]):
     data[t_frange] = (A_base/2)*np.sin(f*t_frange) +(A_base/2)*np.sin(f_week*t_frange) 
 
     # Gradual frequency shift
-    fs = (2*np.pi) / 12                           # frequency shift
+    fs = 1 / 12                           # frequency shift
     fs_loc = 9000                     # location
     fs_dur = dur_base*3               # anomaly duration
-    t_fsrange =  np.arange(fs_loc,fs_loc+fs_dur,1)
-    fs_shift =  np.linspace(f_day,fs,fs_dur)
-    out = np.zeros(fs_dur)
-    for i in np.arange(fs_dur):
-        out[i] = t_fsrange[i] * fs_shift[i]
-    data[t_fsrange] =(A_base/2)*np.sin(out) #+(A_base/2)*np.sin(f_week*t_fsrange)
+    t_fsrange = np.arange(fs_loc,fs_loc+fs_dur,1)
+    fs_shift = np.linspace(f_day/(2*np.pi),fs,fs_dur)
+    data[t_fsrange] =(A_base/2)*np.sin(2*np.pi*(t_fsrange + f_day)*t_fsrange) + (A_base/2)*np.sin(f_week*t_fsrange)
 
     # Sudden Phase Shift
     p = 0.5*np.pi
     p_loc = 9240
     p_dur = dur_base
     t_prange = np.arange(p_loc,p_loc+p_dur)
-    data[t_prange] =  (A_base/2)*np.sin(f_day*t_prange + p) +(A_base/2)*np.sin(f_week*t_prange) 
+    data[t_prange] = (A_base/2)*np.sin(f_day*t_prange + p) +(A_base/2)*np.sin(f_week*t_prange) 
 
     # Gradual Phase Shift
     ps = 0.5*np.pi
@@ -101,18 +98,6 @@ def get_data(n=0,datalabels=["timestamp","consumption"]):
     
     # Limit data to 3 decimal places
     data = np.round(data,3)
-    
-    # Output format for NuPic
-    data_pd = pd.DataFrame(data=np.array((dates, list(data))).T,
-                       index=range(len(dates)),
-                       columns=[datalabels[0],datalabels[1]])#['timestamp','consumption']
-    data_pd.to_csv(path_or_buf="/home/codepan1/RestRunnerCode/sim_data.csv" ,columns=[datalabels[0],datalabels[1]])
-    
-    # Output format for swarming
-    columns = pd.MultiIndex.from_tuples(list(zip([datalabels[1], "value"],[datalabels[0], "float"],["T", ""])))
-    data_np = np.array((dates[:8000], list(data[:8000]))).T
-    data_np = pd.DataFrame(data_np, columns=columns)
-    data_np.to_csv(path_or_buf="/home/codepan1/RestRunnerCode/sim_data_mp.csv", index=False)
     
     return data, anomaly_loc, anomaly_dur, dates
 
@@ -158,40 +143,33 @@ def plot_anomalies(data, anomaly_loc, anomaly_dur, Start=8000, buffer = 100):
         
     plt.show()
     
-data, anomaly_loc, anomaly_dur, dates = get_data(n=0,datalabels=["dttm","value"])
+#data, anomaly_loc, anomaly_dur, dates = get_data(n=0,datalabels=["dttm","value"])
 #plot_data(data[8000:], anomaly_loc, anomaly_dur,title = "simulated data")
-plot_anomalies(data, anomaly_loc, anomaly_dur)
+#plot_anomalies(data, anomaly_loc, anomaly_dur)
 
 
 
-# In[99]:
+# In[ ]:
 
 
-f_week = (2*np.pi)/ 168  # weekly period in hours
-f_day = (2*np.pi) / 24   # daily period in hours
-# Gradual frequency shift
-A_base = 20
-fs = (2*np.pi) / 12                           # frequency shift
-fs_loc = 9000                     # location
-fs_dur = 24*3               # anomaly duration
-t_fsrange =  np.arange(fs_loc,fs_loc+fs_dur,1)
-fs_shift =  np.linspace(f_day,fs,fs_dur)
-out = np.zeros(fs_dur)
-for i in np.arange(fs_dur):
-    out[i] = t_fsrange[i] + fs_shift[i]
+# plt.cla
+# f_week = (2*np.pi)/ 168  # weekly period in hours
+# f_day = (2*np.pi) / 24 
+# A_base = 20
+# dur_base = 24
+# # Gradual frequency shift
+# fs = 1 / 12                           # frequency shift
+# fs_loc = 9000                     # location
+# fs_dur = dur_base*3               # anomaly duration
+# t_fsrange = np.linspace(fs_loc,fs_loc+fs_dur,fs_dur)
+# fs_shift = np.linspace(f_day/(2*np.pi),fs,fs_dur)
+# t = np.linspace(0,1,fs_dur)
 
-plt.plot((A_base/2)*np.sin(out)) #+(A_base/2)*np.sin(f_week*t_fsrange))
-plt.show()
-#####https://stackoverflow.com/questions/26921544/drawing-sine-wave-with-increasing-amplitude-and-frequency-over-time
-
-
-# In[61]:
+# plt.plot((A_base/2)*np.sin(2*np.pi*(t_fsrange + fs_shift)*t_fsrange))# + (A_base/2)*np.sin(f_week*t_fsrange))
+# plt.show()
 
 
-(2*np.pi) / 10 
-
-
-# In[109]:
+# In[ ]:
 
 
 # A_base = 20

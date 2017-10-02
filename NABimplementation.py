@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[5]:
+# In[ ]:
 
 
 import numpy as np
@@ -95,13 +95,11 @@ def main(labels, anomaly_score, Afn = -1):
     
     return Snorm
 
-
-
-# example
-series = read_csv("/home/codepan1/RestRunnerCode/alpha_Twitter_volume_AAPL.csv")
-labels = series["label"].values
-anomaly_score = series["anomaly_score"].values
-main(labels, anomaly_score)
+# # example
+# series = read_csv("/home/codepan1/RestRunnerCode/alpha_Twitter_volume_AAPL.csv")
+# labels = series["label"].values
+# anomaly_score = series["anomaly_score"].values
+# main(labels, anomaly_score)
 
 
 # In[ ]:
